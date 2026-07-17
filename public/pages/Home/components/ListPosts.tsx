@@ -1,11 +1,11 @@
-import React, { useState } from "react"
+import React from "react"
 import { Post, Tag, CurrentUser } from "@fider/models"
 import { ShowTag, Markdown, Icon, ResponseLozenge } from "@fider/components"
 import IconChatAlt2 from "@fider/assets/images/heroicons-chat-alt-2.svg"
 import IconCheck from "@fider/assets/images/heroicons-check.svg"
 import { HStack, VStack } from "@fider/components/layout"
 import { useFider } from "@fider/hooks"
-import { Trans } from "@lingui/react/macro"
+import { Trans, Plural } from "@lingui/react/macro"
 
 interface ListPostsProps {
   posts?: Post[]
@@ -13,7 +13,6 @@ interface ListPostsProps {
   emptyText: string
   minimalView?: boolean
   showStatus?: boolean
-  maxVisible?: number
   onPostClick?: (postNumber: number, slug: string) => void
 }
 
@@ -27,6 +26,7 @@ const ListPostItem = (props: {
   const fider = useFider()
   const isModerationEnabled = fider.session.tenant.isModerationEnabled
   const isPending = isModerationEnabled && !props.post.isApproved
+  const votes = props.post.votesCount
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (props.onPostClick) {
@@ -64,8 +64,10 @@ const ListPostItem = (props: {
         )}
         <HStack justify="between" align="center">
           <div className="c-posts-container__post-votes">
-            <span className="text-semibold text-2xl">{props.post.votesCount}</span>{" "}
-            <span className="text-gray-700">{props.post.votesCount === 1 ? <Trans id="label.vote">Vote</Trans> : <Trans id="label.votes">Votes</Trans>}</span>
+            <span className="text-semibold text-2xl">{votes}</span>{" "}
+            <span className="text-gray-700">
+              <Plural id="label.votecount" value={votes} one="Vote" other="Votes" />
+            </span>
             {props.post.hasVoted && (
               <span className="text-xs text-blue-600 ml-2 inline-flex flex-items-center">
                 <Icon sprite={IconCheck} className="h-3 w-3 mr-1" />
@@ -117,7 +119,6 @@ const MinimalListPostItem = (props: { post: Post; tags: Tag[]; onPostClick?: (po
 
 export const ListPosts = (props: ListPostsProps) => {
   const { minimalView = false } = props
-  const [expanded, setExpanded] = useState(false)
 
   if (!props.posts) {
     return null
@@ -127,10 +128,7 @@ export const ListPosts = (props: ListPostsProps) => {
     return <p className="text-center">{props.emptyText}</p>
   }
 
-  const allPosts = props.posts
-  const hasMore = props.maxVisible !== undefined && !expanded && allPosts.length > props.maxVisible
-  const visiblePosts = hasMore ? allPosts.slice(0, props.maxVisible) : allPosts
-  const remainingCount = allPosts.length - visiblePosts.length
+  const visiblePosts = props.posts
 
   return (
     <>
@@ -157,20 +155,6 @@ export const ListPosts = (props: ListPostsProps) => {
             />
           ))}
         </>
-      )}
-      {hasMore && (
-        <div className="my-4 text-center">
-          <a
-            href="#"
-            className="text-primary-base text-medium hover:underline"
-            onClick={(e) => {
-              e.preventDefault()
-              setExpanded(true)
-            }}
-          >
-            <Trans id="listposts.label.showmore">Show {remainingCount} more</Trans>
-          </a>
-        </div>
       )}
     </>
   )

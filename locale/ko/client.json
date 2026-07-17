@@ -235,7 +235,6 @@
   "home.postfilter.label.moderation": "절도",
   "label.vote": "투표",
   "label.votes": "투표",
-  "listposts.label.showmore": "{0} 더 보기",
   "moderation.comment.delete.block.error": "댓글 삭제 및 사용자 차단에 실패했습니다.",
   "moderation.comment.delete.error": "댓글 삭제에 실패했습니다",
   "moderation.comment.deleted": "댓글이 성공적으로 삭제되었습니다.",

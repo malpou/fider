@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/getfider/fider/app"
 	"github.com/getfider/fider/app/models/cmd"
@@ -270,6 +271,9 @@ func getOAuthAuthorizationURL(ctx context.Context, q *query.GetOAuthAuthorizatio
 		Redirect:   q.Redirect,
 		Identifier: q.Identifier,
 		Code:       q.Code,
+		Metadata: jwt.Metadata{
+			ExpiresAt: jwt.Time(time.Now().Add(10 * time.Minute)),
+		},
 	})
 
 	if err != nil {

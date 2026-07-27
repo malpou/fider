@@ -71,7 +71,7 @@ func Gravatar() web.HandlerFunc {
 		size = between(size, 50, 200)
 
 		if err == nil && id > 0 {
-			userByID := &query.GetUserByID{UserID: id}
+			userByID := &query.GetUserByID{UserID: id, TenantID: c.Tenant().ID}
 			err := bus.Dispatch(c, userByID)
 			if err == nil && userByID.Result.Tenant.ID == c.Tenant().ID {
 				if userByID.Result.Email != "" {

@@ -9,7 +9,7 @@ import { VStack, HStack } from "@fider/components/layout"
 import { useFider, usePostOverlay } from "@fider/hooks"
 import { actions } from "@fider/services"
 import { PostDetails } from "@fider/components/PostDetails"
-import { Trans } from "@lingui/react/macro"
+import { Trans, Plural } from "@lingui/react/macro"
 
 interface RoadmapPageProps {
   plannedPosts?: Post[]
@@ -40,6 +40,7 @@ const RoadmapPost = (props: { post: Post; tags: Tag[]; status: string; onPostCli
   const isModerationEnabled = fider.session.tenant.isModerationEnabled
   const isPending = isModerationEnabled && !props.post.isApproved
   const isCompleted = props.status === "completed"
+  const votes = props.post.votesCount
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (props.onPostClick) {
@@ -73,8 +74,7 @@ const RoadmapPost = (props: { post: Post; tags: Tag[]; status: string; onPostCli
           </HStack>
         ) : (
           <span className="c-roadmap-post__votes">
-            <span className="text-semibold">{props.post.votesCount}</span>{" "}
-            {props.post.votesCount === 1 ? <Trans id="label.vote">Vote</Trans> : <Trans id="label.votes">Votes</Trans>}
+            <span className="text-semibold">{votes}</span> <Plural id="label.votecount" value={votes} one="Vote" other="Votes" />
           </span>
         )}
       </VStack>

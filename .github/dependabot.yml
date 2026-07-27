@@ -42,7 +42,13 @@ updates:
     groups:
       all-updates:
         patterns: ["*"]
-    
+    ignore:
+      # aws-sdk-go (v1) is deprecated upstream ("use aws-sdk-go-v2"). Any bump past
+      # the current pin trips staticcheck SA1019 on every import and fails lint-server.
+      # Held until the s3/ses code is migrated to aws-sdk-go-v2; don't remove this
+      # ignore before that migration lands.
+      - dependency-name: "github.com/aws/aws-sdk-go"
+
   # GitHub Actions - monthly, all grouped together
   - package-ecosystem: "github-actions"
     directory: "/"

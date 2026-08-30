@@ -3,9 +3,16 @@ package query
 import (
 	"github.com/getfider/fider/app/models/dto"
 	"github.com/getfider/fider/app/models/entity"
+	"github.com/getfider/fider/app/models/enum"
 )
 
 type CountUsers struct {
+	Result int
+}
+
+type CountUsersByRole struct {
+	Role enum.Role
+
 	Result int
 }
 

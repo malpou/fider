@@ -28,6 +28,9 @@ type GetOAuthAuthorizationURL struct {
 type GetOAuthProfile struct {
 	Provider string
 	Code     string
+	// Nonce is the value minted when the OAuth flow started. It is required for
+	// OIDC providers, where it must match the nonce claim inside the id_token.
+	Nonce string
 
 	Result *dto.OAuthUserProfile
 }
@@ -35,8 +38,17 @@ type GetOAuthProfile struct {
 type GetOAuthRawProfile struct {
 	Provider string
 	Code     string
+	Nonce    string
 
 	Result string
+}
+
+// GetOpenIDConfiguration fetches the OpenID Connect discovery document from
+// {IssuerURL}/.well-known/openid-configuration
+type GetOpenIDConfiguration struct {
+	IssuerURL string
+
+	Result *dto.OpenIDConfiguration
 }
 
 type ListActiveOAuthProviders struct {

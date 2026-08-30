@@ -2,6 +2,7 @@ package actions
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/getfider/fider/app"
@@ -12,6 +13,7 @@ import (
 	"github.com/getfider/fider/app/models/query"
 	"github.com/getfider/fider/app/pkg/bus"
 
+	"github.com/getfider/fider/app/pkg/errors"
 	"github.com/getfider/fider/app/pkg/rand"
 	"github.com/getfider/fider/app/pkg/validate"
 )
@@ -35,6 +37,11 @@ type CreateEditOAuthConfig struct {
 	JSONUserEmailPath string           `json:"jsonUserEmailPath"`
 	JSONUserRolesPath string           `json:"jsonUserRolesPath"`
 	AllowedRoles      string           `json:"allowedRoles"`
+	IssuerURL         string           `json:"issuerURL"`
+	AdminRoles        string           `json:"adminRoles"`
+	CollaboratorRoles string           `json:"collaboratorRoles"`
+	// JWKSURL is filled from the OIDC discovery document during validation, never from user input.
+	JWKSURL string `json:"-"`
 }
 
 func NewCreateEditOAuthConfig() *CreateEditOAuthConfig {
@@ -154,14 +161,44 @@ func (action *CreateEditOAuthConfig) Validate(ctx context.Context, user *entity.
 		result.AddFieldFailure("scope", "Scope must have less than 100 characters.")
 	}
 
+	if action.IssuerURL != "" {
+		if len(action.IssuerURL) > 300 {
+			result.AddFieldFailure("issuerURL", "Issuer URL must have less than 300 characters.")
+		} else if messages := validate.URL(ctx, action.IssuerURL); len(messages) > 0 {
+			result.AddFieldFailure("issuerURL", messages...)
+		} else {
+			// OIDC mode: resolve endpoints from the issuer's discovery document.
+			// Explicitly entered URLs always win over discovered ones.
+			discovery := &query.GetOpenIDConfiguration{IssuerURL: action.IssuerURL}
+			if err := bus.Dispatch(ctx, discovery); err != nil {
+				result.AddFieldFailure("issuerURL", fmt.Sprintf("Could not fetch OpenID configuration: %s", errors.Cause(err).Error()))
+			} else {
+				if action.AuthorizeURL == "" {
+					action.AuthorizeURL = discovery.Result.AuthorizationEndpoint
+				}
+				if action.TokenURL == "" {
+					action.TokenURL = discovery.Result.TokenEndpoint
+				}
+				if action.ProfileURL == "" {
+					action.ProfileURL = discovery.Result.UserinfoEndpoint
+				}
+				action.JWKSURL = discovery.Result.JWKSURI
+			}
+		}
+	}
+
 	if action.AuthorizeURL == "" {
-		result.AddFieldFailure("authorizeURL", "Authorize URL is required.")
+		if action.IssuerURL == "" {
+			result.AddFieldFailure("authorizeURL", "Authorize URL is required.")
+		}
 	} else if messages := validate.URL(ctx, action.AuthorizeURL); len(messages) > 0 {
 		result.AddFieldFailure("authorizeURL", messages...)
 	}
 
 	if action.TokenURL == "" {
-		result.AddFieldFailure("tokenURL", "Token URL is required.")
+		if action.IssuerURL == "" {
+			result.AddFieldFailure("tokenURL", "Token URL is required.")
+		}
 	} else if messages := validate.URL(ctx, action.TokenURL); len(messages) > 0 {
 		result.AddFieldFailure("tokenURL", messages...)
 	}
@@ -192,6 +229,24 @@ func (action *CreateEditOAuthConfig) Validate(ctx context.Context, user *entity.
 
 	if len(action.AllowedRoles) > 500 {
 		result.AddFieldFailure("allowedRoles", "Allowed Roles must have less than 500 characters.")
+	}
+
+	if len(action.AdminRoles) > 500 {
+		result.AddFieldFailure("adminRoles", "Administrator Roles must have less than 500 characters.")
+	}
+
+	if len(action.CollaboratorRoles) > 500 {
+		result.AddFieldFailure("collaboratorRoles", "Collaborator Roles must have less than 500 characters.")
+	}
+
+	// Role mapping silently does nothing without a roles path, so surface it at save time.
+	if action.JSONUserRolesPath == "" {
+		if action.AdminRoles != "" {
+			result.AddFieldFailure("adminRoles", "Administrator Roles requires a JSON User Roles Path.")
+		}
+		if action.CollaboratorRoles != "" {
+			result.AddFieldFailure("collaboratorRoles", "Collaborator Roles requires a JSON User Roles Path.")
+		}
 	}
 
 	return result

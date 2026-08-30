@@ -37,6 +37,20 @@ func countUsers(ctx context.Context, q *query.CountUsers) error {
 	})
 }
 
+func countUsersByRole(ctx context.Context, q *query.CountUsersByRole) error {
+	return using(ctx, func(trx *dbx.Trx, tenant *entity.Tenant, user *entity.User) error {
+		var count int
+		err := trx.Scalar(&count,
+			"SELECT COUNT(*) FROM users WHERE tenant_id = $1 AND role = $2 AND status = $3",
+			tenant.ID, q.Role, enum.UserActive)
+		if err != nil {
+			return errors.Wrap(err, "failed to count users by role")
+		}
+		q.Result = count
+		return nil
+	})
+}
+
 func blockUser(ctx context.Context, c *cmd.BlockUser) error {
 	return using(ctx, func(trx *dbx.Trx, tenant *entity.Tenant, user *entity.User) error {
 		if _, err := trx.Execute(

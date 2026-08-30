@@ -25,7 +25,7 @@ func getCustomOAuthConfigByProvider(ctx context.Context, q *query.GetCustomOAuth
 					 client_id, client_secret, authorize_url,
 					 profile_url, token_url, scope, json_user_id_path,
 					 json_user_name_path, json_user_email_path, json_user_roles_path,
-					 allowed_roles
+					 allowed_roles, issuer_url, jwks_url, admin_roles, collaborator_roles
 		FROM oauth_providers
 		WHERE tenant_id = $1 AND provider = $2
 		`, tenant.ID, q.Provider)
@@ -51,7 +51,7 @@ func listCustomOAuthConfig(ctx context.Context, q *query.ListCustomOAuthConfig) 
 						 client_id, client_secret, authorize_url,
 						 profile_url, token_url, scope, json_user_id_path,
 						 json_user_name_path, json_user_email_path, json_user_roles_path,
-						 allowed_roles
+						 allowed_roles, issuer_url, jwks_url, admin_roles, collaborator_roles
 			FROM oauth_providers
 			WHERE tenant_id = $1
 			ORDER BY id`, tenant.ID)
@@ -81,15 +81,17 @@ func saveCustomOAuthConfig(ctx context.Context, c *cmd.SaveCustomOAuthConfig) er
 				tenant_id, provider, display_name, status, is_trusted,
 				client_id, client_secret, authorize_url,
 				profile_url, token_url, scope, json_user_id_path,
-				json_user_name_path, json_user_email_path, json_user_roles_path, allowed_roles, logo_bkey
-			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+				json_user_name_path, json_user_email_path, json_user_roles_path, allowed_roles, logo_bkey,
+				issuer_url, jwks_url, admin_roles, collaborator_roles
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
 			RETURNING id`
 
 			err = trx.Get(&c.ID, query, tenant.ID, c.Provider,
 				c.DisplayName, c.Status, c.IsTrusted, c.ClientID, c.ClientSecret,
 				c.AuthorizeURL, c.ProfileURL, c.TokenURL,
 				c.Scope, c.JSONUserIDPath, c.JSONUserNamePath,
-				c.JSONUserEmailPath, c.JSONUserRolesPath, c.AllowedRoles, c.Logo.BlobKey)
+				c.JSONUserEmailPath, c.JSONUserRolesPath, c.AllowedRoles, c.Logo.BlobKey,
+				c.IssuerURL, c.JWKSURL, c.AdminRoles, c.CollaboratorRoles)
 		} else {
 			// Detect if role-related fields are being changed. If the new configuration
 			// is active (both allowed_roles and json_user_roles_path are non-empty) and
@@ -105,43 +107,55 @@ func saveCustomOAuthConfig(ctx context.Context, c *cmd.SaveCustomOAuthConfig) er
 			_ = trx.Scalar(&prevJSONUserRolesPath,
 				"SELECT COALESCE(json_user_roles_path, '') FROM oauth_providers WHERE tenant_id = $1 AND id = $2",
 				tenant.ID, c.ID)
+			var prevAdminRoles string
+			_ = trx.Scalar(&prevAdminRoles,
+				"SELECT COALESCE(admin_roles, '') FROM oauth_providers WHERE tenant_id = $1 AND id = $2",
+				tenant.ID, c.ID)
+			var prevCollaboratorRoles string
+			_ = trx.Scalar(&prevCollaboratorRoles,
+				"SELECT COALESCE(collaborator_roles, '') FROM oauth_providers WHERE tenant_id = $1 AND id = $2",
+				tenant.ID, c.ID)
 
 			query := `
-				UPDATE oauth_providers 
-				SET display_name = $3, status = $4, client_id = $5, client_secret = $6, 
+				UPDATE oauth_providers
+				SET display_name = $3, status = $4, client_id = $5, client_secret = $6,
 					authorize_url = $7, profile_url = $8, token_url = $9, scope = $10,
 					json_user_id_path = $11, json_user_name_path = $12, json_user_email_path = $13,
-					json_user_roles_path = $14, allowed_roles = $15, logo_bkey = $16, is_trusted = $17
+					json_user_roles_path = $14, allowed_roles = $15, logo_bkey = $16, is_trusted = $17,
+					issuer_url = $18, jwks_url = $19, admin_roles = $20, collaborator_roles = $21
 			WHERE tenant_id = $1 AND id = $2`
 
 			_, err = trx.Execute(query, tenant.ID, c.ID,
 				c.DisplayName, c.Status, c.ClientID, c.ClientSecret,
 				c.AuthorizeURL, c.ProfileURL, c.TokenURL,
 				c.Scope, c.JSONUserIDPath, c.JSONUserNamePath,
-				c.JSONUserEmailPath, c.JSONUserRolesPath, c.AllowedRoles, c.Logo.BlobKey, c.IsTrusted)
+				c.JSONUserEmailPath, c.JSONUserRolesPath, c.AllowedRoles, c.Logo.BlobKey, c.IsTrusted,
+				c.IssuerURL, c.JWKSURL, c.AdminRoles, c.CollaboratorRoles)
 
-			if err == nil && (prevAllowedRoles != c.AllowedRoles || prevJSONUserRolesPath != c.JSONUserRolesPath) {
-				// Only rotate security stamps if the new configuration still enforces
-				// role-based access control. Both allowed_roles and json_user_roles_path
-				// must be non-empty for restrictions to be active. If either is empty,
-				// access control is effectively deactivated and all users can log in,
-				// so forcing re-authentication is unnecessary.
-				if c.AllowedRoles != "" && c.JSONUserRolesPath != "" {
-					var stampErr error
-					if user != nil {
-						_, stampErr = trx.Execute(
-							"UPDATE users SET security_stamp = md5(random()::text || id::text) WHERE tenant_id = $1 AND id != $2",
-							tenant.ID, user.ID,
-						)
-					} else {
-						_, stampErr = trx.Execute(
-							"UPDATE users SET security_stamp = md5(random()::text || id::text) WHERE tenant_id = $1",
-							tenant.ID,
-						)
-					}
-					if stampErr != nil {
-						return errors.Wrap(stampErr, "failed to rotate security stamps after allowed_roles change")
-					}
+			gateChanged := prevAllowedRoles != c.AllowedRoles || prevJSONUserRolesPath != c.JSONUserRolesPath
+			gateActive := c.AllowedRoles != "" && c.JSONUserRolesPath != ""
+			mappingChanged := prevAdminRoles != c.AdminRoles || prevCollaboratorRoles != c.CollaboratorRoles
+			mappingActive := c.JSONUserRolesPath != "" && (c.AdminRoles != "" || c.CollaboratorRoles != "")
+
+			if err == nil && ((gateChanged && gateActive) || (mappingChanged && mappingActive)) {
+				// Rotate security stamps only when the new configuration still enforces
+				// role-based access control or role mapping. Forcing re-authentication
+				// makes currently-logged-in users go through OAuth again, so their roles
+				// are re-evaluated against the new configuration.
+				var stampErr error
+				if user != nil {
+					_, stampErr = trx.Execute(
+						"UPDATE users SET security_stamp = md5(random()::text || id::text) WHERE tenant_id = $1 AND id != $2",
+						tenant.ID, user.ID,
+					)
+				} else {
+					_, stampErr = trx.Execute(
+						"UPDATE users SET security_stamp = md5(random()::text || id::text) WHERE tenant_id = $1",
+						tenant.ID,
+					)
+				}
+				if stampErr != nil {
+					return errors.Wrap(stampErr, "failed to rotate security stamps after role configuration change")
 				}
 			}
 		}

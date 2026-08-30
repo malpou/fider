@@ -18,7 +18,15 @@ interface OAuthEchoPageProps {
   }
   configuredRolesPath: string
   configuredAllowedRoles: string
+  configuredAdminRoles: string
+  configuredCollaboratorRoles: string
 }
+
+const splitRoles = (roles: string): string[] =>
+  (roles || "")
+    .split(",")
+    .map((r) => r.trim())
+    .filter((r) => r !== "")
 
 const ok = <Icon sprite={IconCheckCircle} className="h-4 text-green-500" />
 const error = <Icon sprite={IconXCircle} className="h-4 text-red-500" />
@@ -44,15 +52,30 @@ export default class OAuthEchoPage extends React.Component<OAuthEchoPageProps, a
     const emailOk = this.props.profile && this.props.profile.email !== ""
     const hasRoles = this.props.profile && this.props.profile.roles && this.props.profile.roles.length > 0
 
-    const { configuredRolesPath, configuredAllowedRoles } = this.props
+    const { configuredRolesPath, configuredAllowedRoles, configuredAdminRoles, configuredCollaboratorRoles } = this.props
+    const userRoles = (this.props.profile && this.props.profile.roles) || []
+
+    // Mirrors the server-side resolveMappedRole: administrator wins over collaborator,
+    // no match means visitor.
+    const adminList = splitRoles(configuredAdminRoles)
+    const collaboratorList = splitRoles(configuredCollaboratorRoles)
+    const mappingConfigured = configuredRolesPath && (adminList.length > 0 || collaboratorList.length > 0)
+    let mappedRole = "visitor"
+    if (userRoles.some((r) => adminList.includes(r.trim()))) {
+      mappedRole = "administrator"
+    } else if (userRoles.some((r) => collaboratorList.includes(r.trim()))) {
+      mappedRole = "collaborator"
+    }
+
     const roleCheckConfigured = configuredRolesPath && configuredAllowedRoles
     let roleCheckPasses = true
     if (roleCheckConfigured && this.props.profile) {
-      const allowed = configuredAllowedRoles
-        .split(",")
-        .map((r) => r.trim())
-        .filter((r) => r !== "")
-      roleCheckPasses = allowed.length === 0 || (this.props.profile.roles || []).some((r) => allowed.includes(r.trim()))
+      const allowed = splitRoles(configuredAllowedRoles)
+      roleCheckPasses =
+        allowed.length === 0 ||
+        userRoles.some((r) => allowed.includes(r.trim())) ||
+        // A user mapped to administrator or collaborator is implicitly allowed in.
+        (!!mappingConfigured && mappedRole !== "visitor")
     }
 
     let responseBody = ""
@@ -119,6 +142,29 @@ export default class OAuthEchoPage extends React.Component<OAuthEchoPageProps, a
               </HStack>
               <span className="text-muted">
                 Configured roles path: <strong>{configuredRolesPath}</strong> · Allowed roles: <strong>{configuredAllowedRoles}</strong>
+              </span>
+            </VStack>
+          )}
+          {mappingConfigured && (
+            <VStack>
+              <HStack>
+                {ok}
+                <strong>Mapped Fider role:</strong> <span>{mappedRole}</span>
+              </HStack>
+              <span className="text-muted">
+                Role mapping is configured, so this user would be assigned the <strong>{mappedRole}</strong> role on every sign in.
+                {configuredAdminRoles && (
+                  <>
+                    {" "}
+                    · Administrator roles: <strong>{configuredAdminRoles}</strong>
+                  </>
+                )}
+                {configuredCollaboratorRoles && (
+                  <>
+                    {" "}
+                    · Collaborator roles: <strong>{configuredCollaboratorRoles}</strong>
+                  </>
+                )}
               </span>
             </VStack>
           )}

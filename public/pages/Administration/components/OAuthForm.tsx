@@ -29,6 +29,9 @@ export const OAuthForm: React.FC<OAuthFormProps> = (props) => {
   const [jsonUserEmailPath, setJSONUserEmailPath] = useState((props.config && props.config.jsonUserEmailPath) || "")
   const [jsonUserRolesPath, setJSONUserRolesPath] = useState((props.config && props.config.jsonUserRolesPath) || "")
   const [allowedRoles, setAllowedRoles] = useState((props.config && props.config.allowedRoles) || "")
+  const [issuerURL, setIssuerURL] = useState((props.config && props.config.issuerURL) || "")
+  const [adminRoles, setAdminRoles] = useState((props.config && props.config.adminRoles) || "")
+  const [collaboratorRoles, setCollaboratorRoles] = useState((props.config && props.config.collaboratorRoles) || "")
   const [logo, setLogo] = useState<ImageUpload | undefined>()
   const [logoURL, setLogoURL] = useState<string | undefined>()
   const [logoBlobKey, setLogoBlobKey] = useState((props.config && props.config.logoBlobKey) || "")
@@ -51,6 +54,9 @@ export const OAuthForm: React.FC<OAuthFormProps> = (props) => {
       jsonUserEmailPath,
       jsonUserRolesPath,
       allowedRoles,
+      issuerURL,
+      adminRoles,
+      collaboratorRoles,
       logo,
     })
     if (result.ok) {
@@ -121,6 +127,21 @@ export const OAuthForm: React.FC<OAuthFormProps> = (props) => {
             ) : undefined
           }
         />
+        <Input
+          field="issuerURL"
+          label="OpenID Connect Issuer URL"
+          maxLength={300}
+          value={issuerURL}
+          disabled={!fider.session.user.isAdministrator}
+          onChange={setIssuerURL}
+        >
+          <p className="text-muted">
+            Optional. For OpenID Connect providers such as Zitadel, Keycloak or Okta, e.g. <strong>https://my-org.zitadel.cloud</strong>. When set, the
+            Authorize, Token and Profile URLs are discovered automatically on save if left empty, and ID Tokens are verified against the provider&apos;s signing
+            keys. Remember to include <strong>openid</strong> in the scope.
+          </p>
+        </Input>
+
         <Input
           field="authorizeURL"
           label="Authorize URL"
@@ -221,6 +242,38 @@ export const OAuthForm: React.FC<OAuthFormProps> = (props) => {
             also configured. Leave empty to allow all roles.
           </p>
         </Input>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Input
+            field="adminRoles"
+            label="Administrator Roles"
+            maxLength={500}
+            value={adminRoles}
+            disabled={!fider.session.user.isAdministrator}
+            onChange={setAdminRoles}
+          >
+            <p className="text-muted">
+              Optional. Comma-separated provider roles mapped to the <strong>Administrator</strong> role.
+            </p>
+          </Input>
+          <Input
+            field="collaboratorRoles"
+            label="Collaborator Roles"
+            maxLength={500}
+            value={collaboratorRoles}
+            disabled={!fider.session.user.isAdministrator}
+            onChange={setCollaboratorRoles}
+          >
+            <p className="text-muted">
+              Optional. Comma-separated provider roles mapped to the <strong>Collaborator</strong> role.
+            </p>
+          </Input>
+        </div>
+        <p className="text-muted">
+          When any role mapping is configured, the identity provider becomes the source of truth: on every sign in through this provider, users are promoted or
+          demoted to the mapped role — users matching neither list become Visitors. Administrator wins over Collaborator, and a Roles JSON path is required. For
+          Zitadel, use the roles path <strong>urn:zitadel:iam:org:project:roles</strong> and enable &quot;Assert Roles on Authentication&quot; on the project.
+        </p>
 
         <Field label="Trusted Source">
           <Toggle field="isTrusted" active={isTrusted} onToggle={setTrusted} label={isTrusted ? "Yes" : "No"} />

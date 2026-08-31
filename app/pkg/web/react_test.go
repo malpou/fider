@@ -57,7 +57,9 @@ func TestReactRenderer_RenderEmptyHomeHTML(t *testing.T) {
 	Expect(html).ContainsSubstring(`Enter your suggestion here...`)
 	Expect(html).ContainsSubstring(`What can we do better? This is the place for you to vote, discuss and share ideas.`)
 	Expect(html).ContainsSubstring(`No posts have been created yet.`)
-	Expect(html).ContainsSubstring(`Powered by Fider`)
+	// The Powered by Fider badge is removed in this fork (PoweredByFider is a
+	// no-op), so SSR output must NOT carry it.
+	Expect(strings.Contains(html, "Powered by Fider")).IsFalse()
 	Expect(err).IsNil()
 }
 
@@ -122,6 +124,8 @@ func TestReactRenderer_RenderEmptyHomeHTML_Portuguese(t *testing.T) {
 	Expect(html).ContainsSubstring(`Insira sua sugestão aqui...`)
 	Expect(html).ContainsSubstring(`O que podemos fazer melhor? Este é o lugar para você votar, discutir e compartilhar ideias.`)
 	Expect(html).ContainsSubstring(`Nenhuma postagem foi criada ainda.`)
-	Expect(html).ContainsSubstring(`Powered by Fider`)
+	// The Powered by Fider badge is removed in this fork (PoweredByFider is a
+	// no-op), so SSR output must NOT carry it.
+	Expect(strings.Contains(html, "Powered by Fider")).IsFalse()
 	Expect(err).IsNil()
 }

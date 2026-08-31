@@ -69,9 +69,7 @@ export class FiderImpl {
   }
 
   public get currentLocale(): string {
-    if (this.session.tenant) {
-      return this.session.tenant.locale
-    }
+    // settings.locale is resolved server-side, including any per-user locale cookie override
     return this.settings.locale
   }
 

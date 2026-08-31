@@ -1,5 +1,6 @@
 export * from "./ErrorBoundary"
 export * from "./ThemeSwitcher"
+export * from "./LanguageSwitcher"
 export * from "./ShowPostResponse"
 export * from "./ShowPostStatus"
 export * from "./ShowTag"

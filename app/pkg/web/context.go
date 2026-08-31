@@ -18,6 +18,7 @@ import (
 	"github.com/getfider/fider/app/actions"
 	"github.com/getfider/fider/app/models/dto"
 	"github.com/getfider/fider/app/models/entity"
+	"github.com/getfider/fider/app/models/enum"
 	"github.com/getfider/fider/app/pkg/dbx"
 	"github.com/getfider/fider/app/pkg/env"
 	"github.com/getfider/fider/app/pkg/errors"
@@ -62,6 +63,9 @@ const CookieAuthName = "auth"
 
 // CookieSignUpAuthName is the name of the cookie that holds the temporary Authentication Token
 const CookieSignUpAuthName = "__signup_auth"
+
+// CookieLocaleName is the name of the cookie that holds the user's preferred locale
+const CookieLocaleName = "locale"
 
 // Context shared between http pipeline
 type Context struct {
@@ -164,6 +168,9 @@ func (c *Context) SetTenant(tenant *entity.Tenant) {
 	if tenant != nil {
 		c.Set(log.PropertyKeyTenantID, tenant.ID)
 		c.Set(app.LocaleCtxKey, tenant.Locale)
+		if cookie, err := c.Request.Cookie(CookieLocaleName); err == nil && enum.IsValidLocale(cookie.Value) {
+			c.Set(app.LocaleCtxKey, cookie.Value)
+		}
 	}
 	c.Set(app.TenantCtxKey, tenant)
 }

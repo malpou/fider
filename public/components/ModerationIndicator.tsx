@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react"
 import { Icon } from "@fider/components"
 import { useFider } from "@fider/hooks"
-import ThumbsUp from "@fider/assets/images/heroicons-thumbsup.svg"
-import ThumbsDown from "@fider/assets/images/heroicons-thumbsdown.svg"
+import ThumbsUp from "@fider/assets/images/lucide-thumbs-up.svg"
+import ThumbsDown from "@fider/assets/images/lucide-thumbs-down.svg"
 import { HStack } from "@fider/components/layout"
 
 export const ModerationIndicator = () => {

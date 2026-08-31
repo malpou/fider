@@ -3,7 +3,7 @@ import "./ShowTag.scss"
 import React, { MouseEvent } from "react"
 import { Tag } from "@fider/models"
 import { classSet } from "@fider/services"
-import EyeSlash from "@fider/assets/images/heroicons-eyeslash.svg"
+import EyeSlash from "@fider/assets/images/lucide-eye-off.svg"
 import { Icon } from "./common"
 
 interface TagProps {

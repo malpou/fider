@@ -5,12 +5,12 @@ import { Webhook, WebhookStatus, WebhookTriggerResult, WebhookType } from "@fide
 import { Button, Icon } from "@fider/components"
 import { actions, notify } from "@fider/services"
 
-import IconX from "@fider/assets/images/heroicons-x.svg"
-import IconPencilAlt from "@fider/assets/images/heroicons-pencil-alt.svg"
-import IconPlay from "@fider/assets/images/heroicons-play.svg"
-import IconCheckCircle from "@fider/assets/images/heroicons-check-circle.svg"
-import IconXCircle from "@fider/assets/images/heroicons-x-circle.svg"
-import IconExclamation from "@fider/assets/images/heroicons-exclamation.svg"
+import IconX from "@fider/assets/images/lucide-x.svg"
+import IconPencilAlt from "@fider/assets/images/lucide-square-pen.svg"
+import IconPlay from "@fider/assets/images/lucide-play.svg"
+import IconCheckCircle from "@fider/assets/images/lucide-circle-check.svg"
+import IconXCircle from "@fider/assets/images/lucide-circle-x.svg"
+import IconExclamation from "@fider/assets/images/lucide-triangle-alert.svg"
 import { HStack, VStack } from "@fider/components/layout"
 import { WebhookFailInfo } from "./WebhookFailInfo"
 

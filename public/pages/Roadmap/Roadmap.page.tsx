@@ -1,6 +1,6 @@
 import "./Roadmap.page.scss"
-import IconArrowLeft from "@fider/assets/images/heroicons-arrowleft.svg"
-import IconCheckCircle from "@fider/assets/images/heroicons-check-circle.svg"
+import IconArrowLeft from "@fider/assets/images/lucide-arrow-left.svg"
+import IconCheckCircle from "@fider/assets/images/lucide-circle-check.svg"
 
 import React, { useState, useCallback } from "react"
 import { Post, Tag } from "@fider/models"

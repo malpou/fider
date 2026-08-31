@@ -2,9 +2,9 @@ import React from "react"
 import { navigator } from "@fider/services"
 import { Icon } from "@fider/components"
 
-import IconXCircle from "@fider/assets/images/heroicons-x-circle.svg"
-import IconCheckCircle from "@fider/assets/images/heroicons-check-circle.svg"
-import IconExclamation from "@fider/assets/images/heroicons-exclamation.svg"
+import IconXCircle from "@fider/assets/images/lucide-circle-x.svg"
+import IconCheckCircle from "@fider/assets/images/lucide-circle-check.svg"
+import IconExclamation from "@fider/assets/images/lucide-triangle-alert.svg"
 import { HStack, VStack } from "@fider/components/layout"
 
 interface OAuthEchoPageProps {

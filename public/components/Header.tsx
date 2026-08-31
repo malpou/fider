@@ -15,7 +15,7 @@ import { useFider } from "@fider/hooks"
 import { HStack } from "./layout"
 import { Trans } from "@lingui/react/macro"
 import { i18n } from "@lingui/core"
-import IconRss from "@fider/assets/images/heroicons-rss.svg"
+import IconRss from "@fider/assets/images/lucide-rss.svg"
 import "./Header.scss"
 
 interface HeaderProps {

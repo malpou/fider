@@ -8,7 +8,7 @@ import { useFider } from "@fider/hooks"
 import { VotesModal } from "./VotesModal"
 import { VStack } from "@fider/components/layout"
 import { Trans } from "@lingui/react/macro"
-import IconPerson from "@fider/assets/images/heroicons-person.svg"
+import IconPerson from "@fider/assets/images/lucide-user.svg"
 
 interface VotesPanelProps {
   post: Post

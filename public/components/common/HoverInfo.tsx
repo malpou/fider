@@ -3,7 +3,7 @@ import "./HoverInfo.scss"
 import React from "react"
 import { Icon } from "./Icon"
 
-import IconInformationCircle from "@fider/assets/images/heroicons-information-circle.svg"
+import IconInformationCircle from "@fider/assets/images/lucide-info.svg"
 import { classSet } from "@fider/services"
 
 interface InfoProps {

@@ -2,8 +2,8 @@ import React from "react"
 import { Modal, Button, CloseIcon, Icon } from "@fider/components"
 import { Trans } from "@lingui/react/macro"
 import { HStack, VStack } from "./layout"
-import IconRss from "@fider/assets/images/heroicons-rss.svg"
-import IconClipboard from "@fider/assets/images/heroicons-clipboard.svg"
+import IconRss from "@fider/assets/images/lucide-rss.svg"
+import IconClipboard from "@fider/assets/images/lucide-clipboard.svg"
 
 interface RSSModalProps {
   isOpen: boolean

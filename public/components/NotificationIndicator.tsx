@@ -2,7 +2,7 @@ import "./NotificationIndicator.scss"
 import NoDataIllustration from "@fider/assets/images/undraw-empty.svg"
 
 import React, { useEffect, useState } from "react"
-import IconBell from "@fider/assets/images/heroicons-bell.svg"
+import IconBell from "@fider/assets/images/lucide-bell.svg"
 import { useFider } from "@fider/hooks"
 import { actions, Fider } from "@fider/services"
 import { Avatar, Icon, Markdown, Moment } from "./common"

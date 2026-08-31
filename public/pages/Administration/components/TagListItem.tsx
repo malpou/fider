@@ -5,8 +5,8 @@ import { TagFormState, TagForm } from "./TagForm"
 import { actions, Failure } from "@fider/services"
 import { useFider } from "@fider/hooks"
 
-import IconX from "@fider/assets/images/heroicons-x.svg"
-import IconPencilAlt from "@fider/assets/images/heroicons-pencil-alt.svg"
+import IconX from "@fider/assets/images/lucide-x.svg"
+import IconPencilAlt from "@fider/assets/images/lucide-square-pen.svg"
 import { VStack } from "@fider/components/layout"
 
 interface TagListItemProps {

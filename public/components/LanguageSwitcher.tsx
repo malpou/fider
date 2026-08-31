@@ -1,4 +1,4 @@
-import IconGlobe from "@fider/assets/images/heroicons-globe-alt.svg"
+import IconGlobe from "@fider/assets/images/lucide-globe.svg"
 import React from "react"
 import { Dropdown, Icon } from "./common"
 import { useFider } from "@fider/hooks"

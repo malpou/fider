@@ -4,8 +4,8 @@ import React, { useState } from "react"
 import { classSet } from "@fider/services"
 import { Icon } from "@fider/components"
 import { useFider } from "@fider/hooks"
-import IconX from "@fider/assets/images/heroicons-x.svg"
-import IconMenu from "@fider/assets/images/heroicons-menu.svg"
+import IconX from "@fider/assets/images/lucide-x.svg"
+import IconMenu from "@fider/assets/images/lucide-menu.svg"
 import { VStack } from "@fider/components/layout"
 
 interface SiteMenuProps {

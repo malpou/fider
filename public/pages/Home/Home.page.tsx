@@ -1,7 +1,7 @@
 import "./Home.page.scss"
 import NoDataIllustration from "@fider/assets/images/undraw-no-data.svg"
-import IconPlusCircle from "@fider/assets/images/heroicons-pluscircle.svg"
-import IconArrowLeft from "@fider/assets/images/heroicons-arrowleft.svg"
+import IconPlusCircle from "@fider/assets/images/lucide-circle-plus.svg"
+import IconArrowLeft from "@fider/assets/images/lucide-arrow-left.svg"
 
 import React, { useEffect, useState, useRef } from "react"
 import { Post, Tag, PostStatus } from "@fider/models"

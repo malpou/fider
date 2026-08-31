@@ -1,5 +1,5 @@
-import IconMoon from "@fider/assets/images/heroicons-moon.svg"
-import IconSun from "@fider/assets/images/heroicons-sun.svg"
+import IconMoon from "@fider/assets/images/lucide-moon.svg"
+import IconSun from "@fider/assets/images/lucide-sun.svg"
 import React, { useEffect, useState } from "react"
 import { Icon } from "./common"
 import "./ThemeSwitcher.scss"

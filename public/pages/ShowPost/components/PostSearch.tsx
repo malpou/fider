@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import IconSearch from "@fider/assets/images/heroicons-search.svg"
+import IconSearch from "@fider/assets/images/lucide-search.svg"
 import { Input, ShowPostStatus } from "@fider/components"
 import { actions } from "@fider/services"
 import { Post, PostStatus } from "@fider/models"

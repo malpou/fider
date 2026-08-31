@@ -4,7 +4,7 @@ import { Button, Modal, Input, Message } from "@fider/components"
 import { AdminBasePage } from "@fider/pages/Administration/components/AdminBasePage"
 import { actions, notify, Fider } from "@fider/services"
 import { Icon } from "@fider/components"
-import IconExclamation from "@fider/assets/images/heroicons-exclamation.svg"
+import IconExclamation from "@fider/assets/images/lucide-triangle-alert.svg"
 
 interface DangerZonePageProps {
   isOwner: boolean

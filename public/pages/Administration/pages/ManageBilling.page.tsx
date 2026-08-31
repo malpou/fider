@@ -3,9 +3,9 @@ import { Button, Icon } from "@fider/components"
 import { HStack, VStack } from "@fider/components/layout"
 import { AdminPageContainer } from "../components/AdminBasePage"
 import { http } from "@fider/services"
-import IconCheck from "@fider/assets/images/heroicons-check.svg"
-import IconX from "@fider/assets/images/heroicons-x.svg"
-import IconInfo from "@fider/assets/images/heroicons-information-circle.svg"
+import IconCheck from "@fider/assets/images/lucide-check.svg"
+import IconX from "@fider/assets/images/lucide-x.svg"
+import IconInfo from "@fider/assets/images/lucide-info.svg"
 
 import "./ManageBilling.page.scss"
 

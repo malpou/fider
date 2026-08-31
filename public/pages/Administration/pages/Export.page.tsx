@@ -2,7 +2,7 @@ import React from "react"
 
 import { Button, Icon } from "@fider/components"
 import { AdminBasePage } from "../components/AdminBasePage"
-import IconDownload from "@fider/assets/images/heroicons-download.svg"
+import IconDownload from "@fider/assets/images/lucide-download.svg"
 
 export default class ExportPage extends AdminBasePage<any, any> {
   public id = "p-admin-export"

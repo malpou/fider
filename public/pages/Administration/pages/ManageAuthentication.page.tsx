@@ -6,8 +6,8 @@ import { OAuthForm } from "../components/OAuthForm"
 import { actions, notify, Fider, Failure } from "@fider/services"
 import { AdminBasePage } from "../components/AdminBasePage"
 
-import IconPlay from "@fider/assets/images/heroicons-play.svg"
-import IconPencilAlt from "@fider/assets/images/heroicons-pencil-alt.svg"
+import IconPlay from "@fider/assets/images/lucide-play.svg"
+import IconPencilAlt from "@fider/assets/images/lucide-square-pen.svg"
 
 import { HStack, VStack } from "@fider/components/layout"
 

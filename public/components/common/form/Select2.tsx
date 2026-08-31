@@ -3,7 +3,7 @@
 // import "./Select2.scss"
 
 // import React, { useEffect, useRef, useState } from "react"
-// import IconSelector from "@fider/assets/images/heroicons-selector.svg"
+// import IconSelector from "@fider/assets/images/lucide-chevrons-up-down.svg"
 // import { HStack } from "@fider/components/layout"
 // import { Icon } from "@fider/components"
 

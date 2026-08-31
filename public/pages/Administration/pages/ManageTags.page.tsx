@@ -8,9 +8,9 @@ import { AdminBasePage } from "../components/AdminBasePage"
 import { TagFormState, TagForm } from "../components/TagForm"
 import { TagListItem } from "../components/TagListItem"
 import { VStack } from "@fider/components/layout"
-import IconDownload from "@fider/assets/images/heroicons-download.svg"
-import IconUpload from "@fider/assets/images/heroicons-upload.svg"
-import IconPlus from "@fider/assets/images/heroicons-plus.svg"
+import IconDownload from "@fider/assets/images/lucide-download.svg"
+import IconUpload from "@fider/assets/images/lucide-upload.svg"
+import IconPlus from "@fider/assets/images/lucide-plus.svg"
 
 interface ManageTagsPageProps {
   tags: Tag[]

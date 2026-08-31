@@ -4,7 +4,7 @@ import { Reactions, Avatar, UserName, Moment, Form, Button, Markdown, Modal, Dro
 import { HStack } from "@fider/components/layout"
 import { formatDate, Failure, actions, notify, copyToClipboard, classSet, clearUrlHash } from "@fider/services"
 import { useFider } from "@fider/hooks"
-import IconDotsHorizontal from "@fider/assets/images/heroicons-dots-horizontal.svg"
+import IconDotsHorizontal from "@fider/assets/images/lucide-ellipsis.svg"
 import { t } from "@lingui/core/macro"
 import { Trans } from "@lingui/react/macro"
 import CommentEditor from "@fider/components/common/form/CommentEditor"

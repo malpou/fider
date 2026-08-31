@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useRef } from "react"
 import ReactDOM from "react-dom"
 import { classSet } from "@fider/services"
 import { Icon } from "@fider/components"
-import IconX from "@fider/assets/images/heroicons-x.svg"
+import IconX from "@fider/assets/images/lucide-x.svg"
 
 interface ModalWindowProps {
   children?: React.ReactNode

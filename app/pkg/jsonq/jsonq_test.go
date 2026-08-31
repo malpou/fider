@@ -199,3 +199,28 @@ func TestArrayFieldStrings_NotArrayReturnsNil(t *testing.T) {
 	query := jsonq.New(`{ "roles": "not an array" }`)
 	Expect(query.ArrayFieldStrings("roles", "id")).IsNil()
 }
+
+func TestObjectKeys(t *testing.T) {
+	RegisterT(t)
+
+	query := jsonq.New(`{ "urn:zitadel:iam:org:project:roles": { "admin": { "260242266": "org.domain" }, "user": { "260242266": "org.domain" } } }`)
+	Expect(query.ObjectKeys("urn:zitadel:iam:org:project:roles")).Equals([]string{"admin", "user"})
+}
+
+func TestObjectKeys_NestedSelector(t *testing.T) {
+	RegisterT(t)
+
+	query := jsonq.New(`{ "user": { "roles": { "reader": {}, "writer": {} } } }`)
+	Expect(query.ObjectKeys("user.roles")).Equals([]string{"reader", "writer"})
+}
+
+func TestObjectKeys_NotAnObjectReturnsNil(t *testing.T) {
+	RegisterT(t)
+
+	query := jsonq.New(`{ "roles": ["admin", "user"] }`)
+	Expect(query.ObjectKeys("roles")).IsNil()
+	Expect(query.ObjectKeys("missing")).IsNil()
+
+	query = jsonq.New(`{ "roles": {} }`)
+	Expect(query.ObjectKeys("roles")).IsNil()
+}

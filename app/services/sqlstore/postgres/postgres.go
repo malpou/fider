@@ -83,6 +83,7 @@ func (s Service) Init() {
 	bus.AddHandler(getCommentsByPost)
 
 	bus.AddHandler(countUsers)
+	bus.AddHandler(countUsersByRole)
 	bus.AddHandler(blockUser)
 	bus.AddHandler(unblockUser)
 	bus.AddHandler(untrustUser)

@@ -20,6 +20,7 @@ import (
 	"github.com/getfider/fider/app/pkg/errors"
 	"github.com/getfider/fider/app/pkg/jsonq"
 	"github.com/getfider/fider/app/pkg/jwt"
+	"github.com/getfider/fider/app/pkg/rand"
 	"github.com/getfider/fider/app/pkg/validate"
 	"github.com/getfider/fider/app/pkg/web"
 	"golang.org/x/oauth2"
@@ -52,6 +53,7 @@ func (s Service) Init() {
 	bus.AddHandler(getOAuthRawProfile)
 	bus.AddHandler(listActiveOAuthProviders)
 	bus.AddHandler(listAllOAuthProviders)
+	bus.AddHandler(getOpenIDConfiguration)
 }
 
 func getProviderStatus(key string) int {
@@ -208,6 +210,7 @@ func extractCompositeName(query *jsonq.Query, namePath string) string {
 // - "roles[].id" for array of objects: [{"id": "ROLE_ADMIN"}, {"id": "ROLE_USER"}]
 // - "user.roles[].name" for nested array of objects
 // - "role" for a single string or comma-separated value
+// - "roles" for an object keyed by role name (e.g. Zitadel role grants)
 func extractRolesFromJSON(jsonBody string, rolesPath string) []string {
 	rolesPath = strings.TrimSpace(rolesPath)
 	if rolesPath == "" {
@@ -225,7 +228,9 @@ func extractRolesFromJSON(jsonBody string, rolesPath string) []string {
 	// "roles" — array of strings or single (possibly comma-separated) string
 	values := q.Strings(rolesPath)
 	if len(values) == 0 {
-		return nil
+		// Object keyed by role name, e.g. Zitadel's roles claim:
+		// {"urn:zitadel:iam:org:project:roles": {"admin": {"123": "org.domain"}}}
+		return trimNonEmpty(q.ObjectKeys(rolesPath))
 	}
 
 	// Single string may contain comma-separated roles
@@ -267,10 +272,19 @@ func getOAuthAuthorizationURL(ctx context.Context, q *query.GetOAuthAuthorizatio
 	parameters.Add("redirect_uri", fmt.Sprintf("%s/oauth/%s/callback", oauthBaseURL, q.Provider))
 	parameters.Add("response_type", "code")
 
+	// OIDC providers get a nonce that must come back inside the id_token. It travels
+	// through the signed state (and later handoff) token, so no server-side storage is needed.
+	nonce := ""
+	if config.IsOIDC() {
+		nonce = rand.String(32)
+		parameters.Add("nonce", nonce)
+	}
+
 	state, err := jwt.Encode(jwt.OAuthStateClaims{
 		Redirect:   q.Redirect,
 		Identifier: q.Identifier,
 		Code:       q.Code,
+		Nonce:      nonce,
 		Metadata: jwt.Metadata{
 			ExpiresAt: jwt.Time(time.Now().Add(10 * time.Minute)),
 		},
@@ -297,7 +311,7 @@ func getOAuthProfile(ctx context.Context, q *query.GetOAuthProfile) error {
 		return errors.New("Provider %s is disabled", q.Provider)
 	}
 
-	rawProfile := &query.GetOAuthRawProfile{Provider: q.Provider, Code: q.Code}
+	rawProfile := &query.GetOAuthRawProfile{Provider: q.Provider, Code: q.Code, Nonce: q.Nonce}
 	err = bus.Dispatch(ctx, rawProfile)
 	if err != nil {
 		return err
@@ -340,6 +354,19 @@ func getOAuthRawProfile(ctx context.Context, q *query.GetOAuthRawProfile) error 
 		return err
 	}
 
+	// OIDC providers issue an id_token whose signature and claims are verified
+	// against the provider's published keys. The unverified access-token decoding
+	// below is never used for them.
+	if config.IsOIDC() {
+		rawIDToken, _ := oauthToken.Extra("id_token").(string)
+		body, err := getOIDCProfileBody(ctx, config, rawIDToken, oauthToken.AccessToken, q.Nonce)
+		if err != nil {
+			return err
+		}
+		q.Result = body
+		return nil
+	}
+
 	if config.ProfileURL == "" {
 		parts := strings.Split(oauthToken.AccessToken, ".")
 		if len(parts) != 3 {
@@ -351,29 +378,39 @@ func getOAuthRawProfile(ctx context.Context, q *query.GetOAuthRawProfile) error 
 		return nil
 	}
 
+	body, err := fetchUserProfile(ctx, config.ProfileURL, oauthToken.AccessToken)
+	if err != nil {
+		return err
+	}
+
+	q.Result = body
+	return nil
+}
+
+// fetchUserProfile requests the profile (userinfo) endpoint with the given access token.
+func fetchUserProfile(ctx context.Context, profileURL string, accessToken string) (string, error) {
 	// Guard against SSRF: ProfileURL is user-configurable and fetched server-side.
-	if msgs := validate.WebhookURL(config.ProfileURL); len(msgs) > 0 {
-		return errors.New("Profile URL is not allowed: %s", strings.Join(msgs, "; "))
+	if msgs := validate.WebhookURL(profileURL); len(msgs) > 0 {
+		return "", errors.New("Profile URL is not allowed: %s", strings.Join(msgs, "; "))
 	}
 
 	req := &cmd.HTTPRequest{
-		URL:    config.ProfileURL,
+		URL:    profileURL,
 		Method: "GET",
 		Headers: map[string]string{
-			"Authorization": "Bearer " + oauthToken.AccessToken,
+			"Authorization": "Bearer " + accessToken,
 		},
 	}
 
 	if err := bus.Dispatch(ctx, req); err != nil {
-		return err
+		return "", err
 	}
 
 	if req.ResponseStatusCode != 200 {
-		return errors.New("Failed to request profile. Status Code: %d. Body: %s", req.ResponseStatusCode, string(req.ResponseBody))
+		return "", errors.New("Failed to request profile. Status Code: %d. Body: %s", req.ResponseStatusCode, string(req.ResponseBody))
 	}
 
-	q.Result = string(req.ResponseBody)
-	return nil
+	return string(req.ResponseBody), nil
 }
 
 func listActiveOAuthProviders(ctx context.Context, q *query.ListActiveOAuthProviders) error {

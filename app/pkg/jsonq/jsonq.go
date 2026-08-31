@@ -2,6 +2,7 @@ package jsonq
 
 import (
 	"encoding/json"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -129,6 +130,29 @@ func (q *Query) Strings(selector string) []string {
 	}
 
 	return nil
+}
+
+//ObjectKeys returns the sorted keys of the JSON object at the given selector.
+//Returns nil if the selector doesn't exist or the value is not an object.
+//This supports claims shaped like Zitadel's roles claim, where roles are the
+//keys of an object: {"admin": {...}, "user": {...}} yields ["admin", "user"].
+func (q *Query) ObjectKeys(selector string) []string {
+	raw := q.Raw(selector)
+	if raw == nil {
+		return nil
+	}
+
+	var obj map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &obj); err != nil || len(obj) == 0 {
+		return nil
+	}
+
+	keys := make([]string, 0, len(obj))
+	for key := range obj {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 //ArrayFieldStrings iterates the JSON array at selector and extracts the named

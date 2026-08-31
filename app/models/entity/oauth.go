@@ -29,6 +29,16 @@ type OAuthConfig struct {
 	JSONUserEmailPath string
 	JSONUserRolesPath string
 	AllowedRoles      string
+	IssuerURL         string
+	JWKSURL           string
+	AdminRoles        string
+	CollaboratorRoles string
+}
+
+// IsOIDC returns true when this provider is configured as an OpenID Connect provider.
+// OIDC providers exchange and verify id_tokens instead of decoding access tokens.
+func (o OAuthConfig) IsOIDC() bool {
+	return o.IssuerURL != ""
 }
 
 // MarshalJSON returns the JSON encoding of OAuthConfig
@@ -55,5 +65,9 @@ func (o OAuthConfig) MarshalJSON() ([]byte, error) {
 		"jsonUserEmailPath": o.JSONUserEmailPath,
 		"jsonUserRolesPath": o.JSONUserRolesPath,
 		"allowedRoles":      o.AllowedRoles,
+		"issuerURL":         o.IssuerURL,
+		"jwksURL":           o.JWKSURL,
+		"adminRoles":        o.AdminRoles,
+		"collaboratorRoles": o.CollaboratorRoles,
 	})
 }

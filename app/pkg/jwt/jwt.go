@@ -49,6 +49,9 @@ type OAuthStateClaims struct {
 	Redirect   string `json:"oauthstate/redirect"`
 	Identifier string `json:"oauthstate/identifier"`
 	Code       string `json:"oauthstate/code"`
+	// Nonce is only set for OIDC providers: it is sent to the provider and must
+	// come back inside the id_token, binding the token to this sign in attempt.
+	Nonce string `json:"oauthstate/nonce,omitempty"`
 	Metadata
 }
 
@@ -59,6 +62,9 @@ type OAuthHandoffClaims struct {
 	Provider      string `json:"oauthhandoff/provider"`
 	Origin        string `json:"oauthhandoff/origin"`
 	SessionIDHash string `json:"oauthhandoff/session_id_hash"`
+	// Nonce carries the OIDC nonce from the state token over to the tenant address,
+	// where the code is exchanged and the id_token nonce claim is verified.
+	Nonce string `json:"oauthhandoff/nonce,omitempty"`
 	Metadata
 }
 

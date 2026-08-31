@@ -88,35 +88,43 @@ func isKnownOAuthOrigin(c *web.Context, u *url.URL) bool {
 
 // newOAuthHandoff mints the token that carries an OAuth sign in from the callback address
 // over to the tenant address, bound to that origin, provider and browser session.
-func newOAuthHandoff(provider, origin, sessionID string) (string, error) {
+// For OIDC providers it also carries the nonce over, so the id_token can be verified
+// against it when the code is exchanged on the tenant address.
+func newOAuthHandoff(provider, origin, sessionID, nonce string) (string, error) {
 	return jwt.Encode(jwt.OAuthHandoffClaims{
 		Provider:      provider,
 		Origin:        origin,
 		SessionIDHash: hashSessionID(sessionID),
+		Nonce:         nonce,
 		Metadata: jwt.Metadata{
 			ExpiresAt: jwt.Time(time.Now().Add(handoffLifetime)),
 		},
 	})
 }
 
-// isValidOAuthHandoff checks that a handoff token belongs to this exact request: same
-// provider, same origin, same browser session, and not yet expired.
-func isValidOAuthHandoff(c *web.Context, provider, handoff string) bool {
+// validOAuthHandoffClaims checks that a handoff token belongs to this exact request: same
+// provider, same origin, same browser session, and not yet expired. It returns the decoded
+// claims so callers can use the values the token carries (e.g. the OIDC nonce).
+func validOAuthHandoffClaims(c *web.Context, provider, handoff string) (*jwt.OAuthHandoffClaims, bool) {
 	if handoff == "" || c.SessionID() == "" {
-		return false
+		return nil, false
 	}
 
 	claims, err := jwt.DecodeOAuthHandoffClaims(handoff)
 	if err != nil {
-		return false
+		return nil, false
 	}
 
 	if claims.Provider != provider || !isAllowedOAuthRedirect(oauthAllowedOrigins(c), claims.Origin) {
-		return false
+		return nil, false
 	}
 
 	expected := hashSessionID(c.SessionID())
-	return subtle.ConstantTimeCompare([]byte(claims.SessionIDHash), []byte(expected)) == 1
+	if subtle.ConstantTimeCompare([]byte(claims.SessionIDHash), []byte(expected)) != 1 {
+		return nil, false
+	}
+
+	return claims, true
 }
 
 // hashSessionID hashes a session ID so the handoff token can be bound to a browser session
@@ -163,12 +171,13 @@ func OAuthEcho() web.HandlerFunc {
 			return c.Redirect("/")
 		}
 
-		if !isValidOAuthHandoff(c, provider, c.QueryParam("handoff")) {
+		handoffClaims, ok := validOAuthHandoffClaims(c, provider, c.QueryParam("handoff"))
+		if !ok {
 			log.Warn(c, "OAuth handoff token is not valid for this request. Aborting sign in process.")
 			return c.Redirect("/")
 		}
 
-		rawProfile := &query.GetOAuthRawProfile{Provider: provider, Code: code}
+		rawProfile := &query.GetOAuthRawProfile{Provider: provider, Code: code, Nonce: handoffClaims.Nonce}
 		err := bus.Dispatch(c, rawProfile)
 		if err != nil {
 			return c.Page(http.StatusOK, web.Props{
@@ -185,20 +194,24 @@ func OAuthEcho() web.HandlerFunc {
 
 		// Fetch provider config to show configured allowedRoles on the test page.
 		// Errors are intentionally ignored here — this is a non-critical diagnostic fetch.
-		var configuredAllowedRoles, configuredRolesPath string
+		var configuredAllowedRoles, configuredRolesPath, configuredAdminRoles, configuredCollaboratorRoles string
 		if providerConfig, err := getCustomOAuthConfig(c, provider); err == nil && providerConfig != nil {
 			configuredAllowedRoles = providerConfig.AllowedRoles
 			configuredRolesPath = providerConfig.JSONUserRolesPath
+			configuredAdminRoles = providerConfig.AdminRoles
+			configuredCollaboratorRoles = providerConfig.CollaboratorRoles
 		}
 
 		return c.Page(http.StatusOK, web.Props{
 			Page:  "OAuthEcho/OAuthEcho.page",
 			Title: "OAuth Test Page",
 			Data: web.Map{
-				"body":                 rawProfile.Result,
-				"profile":              parseRawProfile.Result,
-				"configuredRolesPath":  configuredRolesPath,
-				"configuredAllowedRoles": configuredAllowedRoles,
+				"body":                        rawProfile.Result,
+				"profile":                     parseRawProfile.Result,
+				"configuredRolesPath":         configuredRolesPath,
+				"configuredAllowedRoles":      configuredAllowedRoles,
+				"configuredAdminRoles":        configuredAdminRoles,
+				"configuredCollaboratorRoles": configuredCollaboratorRoles,
 			},
 		})
 	}
@@ -217,12 +230,13 @@ func OAuthToken() web.HandlerFunc {
 			return c.Redirect(redirect)
 		}
 
-		if !isValidOAuthHandoff(c, provider, c.QueryParam("handoff")) {
+		handoffClaims, ok := validOAuthHandoffClaims(c, provider, c.QueryParam("handoff"))
+		if !ok {
 			log.Warn(c, "OAuth handoff token is not valid for this request. Aborting sign in process.")
 			return c.Redirect(redirect)
 		}
 
-		oauthUser := &query.GetOAuthProfile{Provider: provider, Code: code}
+		oauthUser := &query.GetOAuthProfile{Provider: provider, Code: code, Nonce: handoffClaims.Nonce}
 		if err := bus.Dispatch(c, oauthUser); err != nil {
 			return c.Failure(err)
 		}
@@ -260,8 +274,18 @@ func OAuthToken() web.HandlerFunc {
 			providerRolesPath = customConfig.JSONUserRolesPath
 			providerAllowedRoles = customConfig.AllowedRoles
 		}
+
+		// Resolve the Fider role the provider's role mapping assigns to this user.
+		// A user mapped to collaborator or administrator is implicitly allowed through
+		// the allowed-roles gate, mirroring the isFiderPrivileged bypass below.
+		mappedRole, hasMappedRole := enum.RoleVisitor, false
+		if customConfig != nil && providerRolesPath != "" {
+			mappedRole, hasMappedRole = resolveMappedRole(oauthUser.Result.Roles, customConfig.AdminRoles, customConfig.CollaboratorRoles)
+		}
+
 		isFiderPrivileged := user != nil && (user.Role == enum.RoleAdministrator || user.Role == enum.RoleCollaborator)
-		if !isFiderPrivileged && !hasAllowedRole(oauthUser.Result.Roles, providerRolesPath, providerAllowedRoles) {
+		isMappedPrivileged := hasMappedRole && mappedRole >= enum.RoleCollaborator
+		if !isFiderPrivileged && !isMappedPrivileged && !hasAllowedRole(oauthUser.Result.Roles, providerRolesPath, providerAllowedRoles) {
 			log.Warnf(c, "User @{UserID} attempted OAuth login but does not have required role. User roles: @{UserRoles}, Allowed roles: @{AllowedRoles}",
 				dto.Props{
 					"UserID":       oauthUser.Result.ID,
@@ -277,11 +301,16 @@ func OAuthToken() web.HandlerFunc {
 					return c.Redirect("/not-invited")
 				}
 
+				role := enum.RoleVisitor
+				if hasMappedRole {
+					role = mappedRole
+				}
+
 				user = &entity.User{
 					Name:   oauthUser.Result.Name,
 					Tenant: c.Tenant(),
 					Email:  oauthUser.Result.Email,
-					Role:   enum.RoleVisitor,
+					Role:   role,
 					Providers: []*entity.UserProvider{
 						{
 							UID:  oauthUser.Result.ID,
@@ -306,10 +335,88 @@ func OAuthToken() web.HandlerFunc {
 			}
 		}
 
+		// Sync the Fider role with the provider's role mapping on every sign in.
+		// The identity provider is the source of truth: users are promoted and
+		// demoted to whatever their current roles map to.
+		if hasMappedRole && user.Role != mappedRole {
+			if err := syncUserRole(c, user, mappedRole); err != nil {
+				return c.Failure(err)
+			}
+		}
+
 		webutil.AddAuthUserCookie(c, user)
 
 		return c.Redirect(redirect)
 	}
+}
+
+// syncUserRole changes a user's role to match the role mapped from the OAuth provider.
+// The only exception is demoting the last administrator, which would leave the site
+// without anyone able to manage it.
+// Changing the role rotates the user's security stamp, so the user is re-fetched to
+// keep the auth cookie minted afterwards valid.
+func syncUserRole(c *web.Context, user *entity.User, mappedRole enum.Role) error {
+	if user.Role == enum.RoleAdministrator && mappedRole < enum.RoleAdministrator {
+		countAdmins := &query.CountUsersByRole{Role: enum.RoleAdministrator}
+		if err := bus.Dispatch(c, countAdmins); err != nil {
+			return err
+		}
+		if countAdmins.Result <= 1 {
+			log.Warnf(c, "Skipping OAuth role demotion of @{UserID}: they are the last administrator.",
+				dto.Props{"UserID": user.ID})
+			return nil
+		}
+	}
+
+	if err := bus.Dispatch(c, &cmd.ChangeUserRole{UserID: user.ID, Role: mappedRole}); err != nil {
+		return err
+	}
+
+	byID := &query.GetUserByID{UserID: user.ID}
+	if err := bus.Dispatch(c, byID); err != nil {
+		return err
+	}
+	*user = *byID.Result
+
+	return nil
+}
+
+// resolveMappedRole maps the roles a provider reports for a user onto a Fider role.
+// adminRoles and collaboratorRoles are comma-separated role names; administrator wins
+// over collaborator when a user matches both. Users matching neither list are visitors.
+// mapped is false when no mapping is configured on the provider at all, in which case
+// existing Fider roles are left untouched.
+func resolveMappedRole(userRoles []string, adminRoles string, collaboratorRoles string) (role enum.Role, mapped bool) {
+	adminList := splitRoleList(adminRoles)
+	collaboratorList := splitRoleList(collaboratorRoles)
+
+	if len(adminList) == 0 && len(collaboratorList) == 0 {
+		return enum.RoleVisitor, false
+	}
+
+	for _, userRole := range userRoles {
+		if adminList[strings.TrimSpace(userRole)] {
+			return enum.RoleAdministrator, true
+		}
+	}
+
+	for _, userRole := range userRoles {
+		if collaboratorList[strings.TrimSpace(userRole)] {
+			return enum.RoleCollaborator, true
+		}
+	}
+
+	return enum.RoleVisitor, true
+}
+
+func splitRoleList(roles string) map[string]bool {
+	list := make(map[string]bool)
+	for _, role := range strings.Split(roles, ",") {
+		if role = strings.TrimSpace(role); role != "" {
+			list[role] = true
+		}
+	}
+	return list
 }
 
 // getCustomOAuthConfig fetches the custom OAuth provider config for the given provider.
@@ -368,7 +475,7 @@ func OAuthCallback() web.HandlerFunc {
 
 		//Test OAuth
 		if redirectURL.Path == fmt.Sprintf("/oauth/%s/echo", provider) {
-			handoff, err := newOAuthHandoff(provider, origin, claims.Identifier)
+			handoff, err := newOAuthHandoff(provider, origin, claims.Identifier, claims.Nonce)
 			if err != nil {
 				return c.Failure(err)
 			}
@@ -382,7 +489,7 @@ func OAuthCallback() web.HandlerFunc {
 
 		//Sign up process
 		if redirectURL.Path == "/signup" {
-			oauthUser := &query.GetOAuthProfile{Provider: provider, Code: code}
+			oauthUser := &query.GetOAuthProfile{Provider: provider, Code: code, Nonce: claims.Nonce}
 			if err := bus.Dispatch(c, oauthUser); err != nil {
 				return c.Failure(err)
 			}
@@ -409,7 +516,7 @@ func OAuthCallback() web.HandlerFunc {
 		}
 
 		//Sign in process
-		handoff, err := newOAuthHandoff(provider, origin, claims.Identifier)
+		handoff, err := newOAuthHandoff(provider, origin, claims.Identifier, claims.Nonce)
 		if err != nil {
 			return c.Failure(err)
 		}

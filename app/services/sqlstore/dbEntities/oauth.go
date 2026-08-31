@@ -24,6 +24,10 @@ type OAuthConfig struct {
 	JSONUserEmailPath string         `db:"json_user_email_path"`
 	JSONUserRolesPath sql.NullString `db:"json_user_roles_path"`
 	AllowedRoles      sql.NullString `db:"allowed_roles"`
+	IssuerURL         sql.NullString `db:"issuer_url"`
+	JWKSURL           sql.NullString `db:"jwks_url"`
+	AdminRoles        sql.NullString `db:"admin_roles"`
+	CollaboratorRoles sql.NullString `db:"collaborator_roles"`
 }
 
 func (m *OAuthConfig) ToModel() *entity.OAuthConfig {
@@ -34,6 +38,22 @@ func (m *OAuthConfig) ToModel() *entity.OAuthConfig {
 	allowedRoles := ""
 	if m.AllowedRoles.Valid {
 		allowedRoles = m.AllowedRoles.String
+	}
+	issuerURL := ""
+	if m.IssuerURL.Valid {
+		issuerURL = m.IssuerURL.String
+	}
+	jwksURL := ""
+	if m.JWKSURL.Valid {
+		jwksURL = m.JWKSURL.String
+	}
+	adminRoles := ""
+	if m.AdminRoles.Valid {
+		adminRoles = m.AdminRoles.String
+	}
+	collaboratorRoles := ""
+	if m.CollaboratorRoles.Valid {
+		collaboratorRoles = m.CollaboratorRoles.String
 	}
 
 	return &entity.OAuthConfig{
@@ -54,5 +74,9 @@ func (m *OAuthConfig) ToModel() *entity.OAuthConfig {
 		JSONUserEmailPath: m.JSONUserEmailPath,
 		JSONUserRolesPath: rolesPath,
 		AllowedRoles:      allowedRoles,
+		IssuerURL:         issuerURL,
+		JWKSURL:           jwksURL,
+		AdminRoles:        adminRoles,
+		CollaboratorRoles: collaboratorRoles,
 	}
 }

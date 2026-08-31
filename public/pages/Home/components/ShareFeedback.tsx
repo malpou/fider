@@ -222,7 +222,7 @@ export const ShareFeedback: React.FC<ShareFeedbackProps> = (props) => {
     // We don't need to do anything special here
   }
 
-  const showSubmitButton = title.replace(/\s+/g, " ").trim().length > 9
+  const titleIsValid = title.replace(/\s+/g, " ").trim().length > 9
 
   return (
     <Modal.Window className="c-share-feedback" isOpen={isOpen} onClose={handleClose} size="fullscreen" center={false}>
@@ -297,18 +297,21 @@ export const ShareFeedback: React.FC<ShareFeedbackProps> = (props) => {
             </div>
           </div>
         ) : (
-          /* For authenticated users, only show the submit button container when title is long enough */
-          showSubmitButton && (
-            <div className="c-share-feedback__content animate-fade-in">
-              <div className="c-share-feedback-signin">
-                <div className="flex justify-center">
-                  <Button variant="primary" onClick={finaliseFeedback}>
-                    <Trans id="newpost.modal.submit">Submit your idea</Trans>
-                  </Button>
-                </div>
+          /* For authenticated users, the submit button is always visible but disabled until the title is long enough */
+          <div className="c-share-feedback__content">
+            <div className="c-share-feedback-signin">
+              <div className="flex justify-center">
+                <Button variant="primary" disabled={!titleIsValid} onClick={finaliseFeedback}>
+                  <Trans id="newpost.modal.submit">Submit your idea</Trans>
+                </Button>
               </div>
+              {!titleIsValid && (
+                <p className="text-muted text-center text-sm mt-2 mb-0">
+                  <Trans id="newpost.modal.title.hint">Your title needs at least 10 characters before you can submit.</Trans>
+                </p>
+              )}
             </div>
-          )
+          </div>
         )}
         {!fider.session.isAuthenticated ? <LegalFooter /> : null}
       </Modal.Content>

@@ -174,6 +174,7 @@
   "newpost.modal.description.placeholder": "Berätta om det. Förklara det utförligt, tveka inte, ju mer information desto bättre.",
   "newpost.modal.submit": "Skicka in din idé",
   "newpost.modal.title": "Dela din idé...",
+  "newpost.modal.title.hint": "",
   "newpost.modal.title.label": "Ge din idé en titel",
   "newpost.modal.title.placeholder": "Något kort och rappt, sammanfatta det med några få ord",
   "page.backhome": "Ta mig tillbaka till <0>{0}</0> hemsida.",

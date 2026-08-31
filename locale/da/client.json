@@ -174,6 +174,7 @@
   "newpost.modal.description.placeholder": "Fortæl os om den. Forklar det hele, hold ikke igen – jo flere oplysninger, jo bedre.",
   "newpost.modal.submit": "Indsend din idé",
   "newpost.modal.title": "Del din idé...",
+  "newpost.modal.title.hint": "Din titel skal være på mindst 10 tegn, før du kan indsende.",
   "newpost.modal.title.label": "Giv din idé en titel",
   "newpost.modal.title.placeholder": "Noget kort og fængende – opsummér den med få ord",
   "page.backhome": "Tag mig tilbage til <0>{0}</0>s forside.",

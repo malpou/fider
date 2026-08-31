@@ -174,6 +174,7 @@
   "newpost.modal.description.placeholder": "Bize anlatın. Tam olarak açıklayın, saklamayın, ne kadar çok bilgi o kadar iyi.",
   "newpost.modal.submit": "Fikrinizi gönderin",
   "newpost.modal.title": "Fikrinizi paylaşın...",
+  "newpost.modal.title.hint": "",
   "newpost.modal.title.label": "Fikrinize bir başlık verin",
   "newpost.modal.title.placeholder": "Kısa ve öz bir şey, birkaç kelimeyle özetleyin",
   "page.backhome": "Beni <0>{0}</0> ana sayfaya götür.",

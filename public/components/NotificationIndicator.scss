@@ -2,6 +2,10 @@
 
 .c-notification-indicator {
   position: relative;
+  // Inline spans align the svg to the text baseline, leaving descender space
+  // under the icon and floating the bell above its flex-centered neighbors.
+  display: inline-flex;
+  align-items: center;
 
   .c-notification-indicator-unread-counter {
     position: absolute;

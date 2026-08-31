@@ -21,6 +21,7 @@
   "action.submit": "Indsend",
   "action.vote": "Stem på denne idé",
   "action.voted": "Stemt!",
+  "admin.general.translation.hint": "Du redigerer oversættelserne for dette sprog. Tomme felter falder tilbage til indholdet på standardsproget nedenfor.",
   "editor.markdownmode": "Skift til markdown-editor",
   "editor.richtextmode": "Skift til rich text-editor",
   "enum.poststatus.completed": "Fuldført",

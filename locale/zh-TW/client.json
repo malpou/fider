@@ -21,6 +21,7 @@
   "action.submit": "提交",
   "action.vote": "為此想法投票",
   "action.voted": "已投票！",
+  "admin.general.translation.hint": "",
   "editor.markdownmode": "切換至 Markdown 編輯器",
   "editor.richtextmode": "切換至富文字編輯器",
   "enum.poststatus.completed": "已完成",

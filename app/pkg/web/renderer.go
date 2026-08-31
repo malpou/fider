@@ -201,7 +201,10 @@ func (r *Renderer) Render(w io.Writer, statusCode int, props Props, ctx *Context
 	public["page"] = props.Page
 	public["contextID"] = ctx.ContextID()
 	public["sessionID"] = ctx.SessionID()
-	public["tenant"] = tenant
+	// Overlay the request locale's content variants; this covers SSR and anonymous
+	// visitors too, as both render from this payload. Admin pages that edit these
+	// fields must receive the raw values via props instead (see GeneralSettingsPage).
+	public["tenant"] = tenant.Localized(locale)
 	public["props"] = props.Data
 	public["settings"] = &Map{
 		"mode":                env.Config.HostMode,

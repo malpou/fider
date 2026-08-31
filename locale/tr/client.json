@@ -21,6 +21,7 @@
   "action.submit": "Gönder",
   "action.vote": "Bu fikre oy verin",
   "action.voted": "Oy verildi!",
+  "admin.general.translation.hint": "",
   "editor.markdownmode": "Markdown düzenleyicisine geç",
   "editor.richtextmode": "Zengin metin düzenleyicisine geç",
   "enum.poststatus.completed": "Tamamlandı",

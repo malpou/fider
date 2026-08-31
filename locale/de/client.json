@@ -21,6 +21,7 @@
   "action.submit": "Absenden",
   "action.vote": "Abstimmen",
   "action.voted": "Abgestimmt!",
+  "admin.general.translation.hint": "",
   "editor.markdownmode": "Zum Markdown-Editor wechseln",
   "editor.richtextmode": "Zum Rich-Text-Editor wechseln",
   "enum.poststatus.completed": "Erledigt",

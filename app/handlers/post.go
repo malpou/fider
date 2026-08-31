@@ -8,6 +8,7 @@ import (
 	"github.com/getfider/fider/app/pkg/bus"
 	"github.com/getfider/fider/app/pkg/csv"
 	"github.com/getfider/fider/app/pkg/env"
+	"github.com/getfider/fider/app/pkg/i18n"
 	"github.com/getfider/fider/app/pkg/markdown"
 	"github.com/getfider/fider/app/pkg/web"
 )
@@ -62,8 +63,8 @@ func Index() web.HandlerFunc {
 		}
 
 		description := ""
-		if c.Tenant().WelcomeMessage != "" {
-			description = markdown.PlainText(c.Tenant().WelcomeMessage)
+		if welcomeMessage := c.Tenant().Localized(i18n.GetLocale(c)).WelcomeMessage; welcomeMessage != "" {
+			description = markdown.PlainText(welcomeMessage)
 		} else {
 			description = "We'd love to hear what you're thinking about. What can we do better? This is the place for you to vote, discuss and share posts."
 		}

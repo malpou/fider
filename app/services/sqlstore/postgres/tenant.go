@@ -80,8 +80,18 @@ func updateTenantSettings(ctx context.Context, c *cmd.UpdateTenantSettings) erro
 			c.Logo.BlobKey = ""
 		}
 
-		query := "UPDATE tenants SET name = $1, invitation = $2, welcome_message = $3, welcome_header = $4, description_template = $5, cname = $6, logo_bkey = $7, locale = $8 WHERE id = $9"
-		_, err := trx.Execute(query, c.Title, c.Invitation, c.WelcomeMessage, c.WelcomeHeader, c.DescriptionTemplate, c.CNAME, c.Logo.BlobKey, c.Locale, tenant.ID)
+		// The base columns are the default-language content, so a variant for the
+		// tenant's own locale (or an empty variant) is redundant and dropped.
+		messages := c.MessagesI18n
+		delete(messages, c.Locale)
+		for locale, m := range messages {
+			if m == (entity.TenantMessages{}) {
+				delete(messages, locale)
+			}
+		}
+
+		query := "UPDATE tenants SET name = $1, invitation = $2, welcome_message = $3, welcome_header = $4, description_template = $5, cname = $6, logo_bkey = $7, locale = $8, messages_i18n = $9 WHERE id = $10"
+		_, err := trx.Execute(query, c.Title, c.Invitation, c.WelcomeMessage, c.WelcomeHeader, c.DescriptionTemplate, c.CNAME, c.Logo.BlobKey, c.Locale, messages, tenant.ID)
 		if err != nil {
 			return errors.Wrap(err, "failed update tenant settings")
 		}
@@ -92,6 +102,7 @@ func updateTenantSettings(ctx context.Context, c *cmd.UpdateTenantSettings) erro
 		tenant.WelcomeMessage = c.WelcomeMessage
 		tenant.WelcomeHeader = c.WelcomeHeader
 		tenant.DescriptionTemplate = c.DescriptionTemplate
+		tenant.MessagesI18n = messages
 
 		return nil
 	})
@@ -260,7 +271,7 @@ func getFirstTenant(ctx context.Context, q *query.GetFirstTenant) error {
 		tenant := dbEntities.Tenant{}
 
 	err := trx.Get(&tenant, `
-		SELECT t.id, t.name, t.subdomain, t.cname, t.invitation, t.locale, t.welcome_message, t.welcome_header, t.description_template, t.status, t.is_private, t.logo_bkey, t.custom_css, t.allowed_schemes, t.is_email_auth_allowed, t.is_feed_enabled, t.is_moderation_enabled, t.prevent_indexing, t.is_pro, t.scheduled_deletion_at,
+		SELECT t.id, t.name, t.subdomain, t.cname, t.invitation, t.locale, t.welcome_message, t.welcome_header, t.description_template, t.status, t.is_private, t.logo_bkey, t.custom_css, t.allowed_schemes, t.is_email_auth_allowed, t.is_feed_enabled, t.is_moderation_enabled, t.prevent_indexing, t.is_pro, t.scheduled_deletion_at, t.messages_i18n,
 			(b.paddle_subscription_id IS NOT NULL AND b.stripe_subscription_id IS NULL) AS has_paddle_subscription
 		FROM tenants t
 		LEFT JOIN tenants_billing b ON b.tenant_id = t.id
@@ -280,7 +291,7 @@ func getTenantByDomain(ctx context.Context, q *query.GetTenantByDomain) error {
 		tenant := dbEntities.Tenant{}
 
 	err := trx.Get(&tenant, `
-		SELECT t.id, t.name, t.subdomain, t.cname, t.invitation, t.locale, t.welcome_message, t.welcome_header, t.description_template, t.status, t.is_private, t.logo_bkey, t.custom_css, t.allowed_schemes, t.is_email_auth_allowed, t.is_feed_enabled, t.is_moderation_enabled, t.prevent_indexing, t.is_pro, t.scheduled_deletion_at,
+		SELECT t.id, t.name, t.subdomain, t.cname, t.invitation, t.locale, t.welcome_message, t.welcome_header, t.description_template, t.status, t.is_private, t.logo_bkey, t.custom_css, t.allowed_schemes, t.is_email_auth_allowed, t.is_feed_enabled, t.is_moderation_enabled, t.prevent_indexing, t.is_pro, t.scheduled_deletion_at, t.messages_i18n,
 			(b.paddle_subscription_id IS NOT NULL AND b.stripe_subscription_id IS NULL) AS has_paddle_subscription
 		FROM tenants t
 		LEFT JOIN tenants_billing b ON b.tenant_id = t.id

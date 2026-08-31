@@ -17,9 +17,20 @@ import (
 // GeneralSettingsPage is the general settings page
 func GeneralSettingsPage() web.HandlerFunc {
 	return func(c *web.Context) error {
+		// The tenant on the page payload has the request locale's variants overlaid,
+		// so the editable content is passed as raw base values + variants instead:
+		// an admin browsing in another locale must never edit the overlaid view.
+		tenant := c.Tenant()
 		return c.Page(http.StatusOK, web.Props{
 			Page:  "Administration/pages/GeneralSettings.page",
 			Title: "General · Site Settings",
+			Data: web.Map{
+				"welcomeHeader":       tenant.WelcomeHeader,
+				"welcomeMessage":      tenant.WelcomeMessage,
+				"invitation":          tenant.Invitation,
+				"descriptionTemplate": tenant.DescriptionTemplate,
+				"messagesI18n":        tenant.MessagesI18n,
+			},
 		})
 	}
 }
@@ -60,6 +71,7 @@ func UpdateSettings() web.HandlerFunc {
 				DescriptionTemplate: action.DescriptionTemplate,
 				CNAME:               action.CNAME,
 				Locale:              action.Locale,
+				MessagesI18n:        action.MessagesI18n,
 			},
 		); err != nil {
 			return c.Failure(err)

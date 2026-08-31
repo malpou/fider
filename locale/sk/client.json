@@ -21,6 +21,7 @@
   "action.submit": "Potvrdiť",
   "action.vote": "Hlasovať za tento nápad",
   "action.voted": "Zahlasované!",
+  "admin.general.translation.hint": "",
   "editor.markdownmode": "Prepnúť na markdown editor",
   "editor.richtextmode": "Prepnúť na bohatý textový editor",
   "enum.poststatus.completed": "Dokončené",

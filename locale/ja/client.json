@@ -21,6 +21,7 @@
   "action.submit": "送信",
   "action.vote": "このアイデアに投票",
   "action.voted": "投票完了！",
+  "admin.general.translation.hint": "",
   "editor.markdownmode": "マークダウンエディターに切り替える",
   "editor.richtextmode": "リッチテキストエディタに切り替える",
   "enum.poststatus.completed": "完了",

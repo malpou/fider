@@ -21,6 +21,7 @@
   "action.submit": "ارسال",
   "action.vote": "به این ایده رأی دهید",
   "action.voted": "رأی داده شد!",
+  "admin.general.translation.hint": "",
   "editor.markdownmode": "تغییر به ویرایشگر مارک‌داون",
   "editor.richtextmode": "تغییر به ویرایشگر متن غنی",
   "enum.poststatus.completed": "تکمیل‌شده",

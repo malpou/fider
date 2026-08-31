@@ -21,6 +21,7 @@
   "action.submit": "Verzenden",
   "action.vote": "Stem op dit idee",
   "action.voted": "Gestemd!",
+  "admin.general.translation.hint": "",
   "editor.markdownmode": "Overschakelen naar markdown-editor",
   "editor.richtextmode": "Overschakelen naar rich text-editor",
   "enum.poststatus.completed": "Voltooid",

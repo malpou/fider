@@ -18,6 +18,17 @@ export interface Tenant {
   isPro: boolean
 }
 
+export interface TenantMessages {
+  welcomeHeader?: string
+  welcomeMessage?: string
+  invitation?: string
+  descriptionTemplate?: string
+}
+
+export interface TenantMessagesI18n {
+  [locale: string]: TenantMessages
+}
+
 export enum TenantStatus {
   Active = 1,
   Pending = 2,

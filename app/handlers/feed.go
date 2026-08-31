@@ -158,7 +158,7 @@ func GlobalFeed() web.HandlerFunc {
 
 		feed := &AtomFeed{
 			Title:    c.Tenant().Name,
-			Subtitle: Content{Body: string(markdown.Full(c.Tenant().WelcomeMessage, true)), Type: "html"},
+			Subtitle: Content{Body: string(markdown.Full(c.Tenant().Localized(i18n.GetLocale(c)).WelcomeMessage, true)), Type: "html"},
 			Id:       web.BaseURL(c),
 			Link: []Link{
 				{Href: fmt.Sprintf("%s/feed/global.atom", web.BaseURL(c)), Type: "application/atom+xml", Rel: "self"},

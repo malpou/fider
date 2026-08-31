@@ -21,6 +21,7 @@
   "action.submit": "Enviar",
   "action.vote": "Vota por esta idea",
   "action.voted": "¡Votado!",
+  "admin.general.translation.hint": "",
   "editor.markdownmode": "Cambiar al editor de rebajas",
   "editor.richtextmode": "Cambiar al editor de texto enriquecido",
   "enum.poststatus.completed": "Completado",

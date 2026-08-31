@@ -21,6 +21,7 @@
   "action.submit": "Invia",
   "action.vote": "Vota questa idea",
   "action.voted": "Votato!",
+  "admin.general.translation.hint": "",
   "editor.markdownmode": "Passa all'editor di markdown",
   "editor.richtextmode": "Passa all'editor di testo avanzato",
   "enum.poststatus.completed": "Completato",

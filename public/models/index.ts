@@ -1,5 +1,6 @@
 export * from "./post"
 export * from "./identity"
+export * from "./locale"
 export * from "./settings"
 export * from "./notification"
 export * from "./webhook"

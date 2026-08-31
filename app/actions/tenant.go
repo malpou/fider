@@ -198,6 +198,8 @@ type UpdateTenantSettings struct {
 	DescriptionTemplate string           `json:"descriptionTemplate"`
 	Locale              string           `json:"locale"`
 	CNAME               string           `json:"cname" format:"lower"`
+
+	MessagesI18n entity.TenantMessagesI18n `json:"messagesI18n"`
 }
 
 func NewUpdateTenantSettings() *UpdateTenantSettings {
@@ -254,6 +256,24 @@ func (action *UpdateTenantSettings) Validate(ctx context.Context, user *entity.U
 
 	if !i18n.IsValidLocale(action.Locale) {
 		result.AddFieldFailure("locale", "Locale is invalid.")
+	}
+
+	for locale, messages := range action.MessagesI18n {
+		if !i18n.IsValidLocale(locale) {
+			result.AddFieldFailure("messagesI18n", fmt.Sprintf("'%s' is not a valid locale.", locale))
+		}
+
+		if len(messages.Invitation) > 60 {
+			result.AddFieldFailure("messagesI18n", "Invitation must have less than 60 characters.")
+		}
+
+		if len(messages.WelcomeHeader) > 100 {
+			result.AddFieldFailure("messagesI18n", "Welcome Header must have less than 100 characters.")
+		}
+
+		if len(messages.DescriptionTemplate) > 2000 {
+			result.AddFieldFailure("messagesI18n", "Idea Template must have less than 2000 characters.")
+		}
 	}
 
 	if action.CNAME != "" {

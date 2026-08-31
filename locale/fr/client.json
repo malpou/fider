@@ -21,6 +21,7 @@
   "action.submit": "Valider",
   "action.vote": "Voter pour cette idée",
   "action.voted": "Votée !",
+  "admin.general.translation.hint": "",
   "editor.markdownmode": "Basculer vers l'éditeur markdown",
   "editor.richtextmode": "Basculer vers l'éditeur de texte enrichi",
   "enum.poststatus.completed": "Terminé",

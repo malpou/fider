@@ -21,6 +21,7 @@
   "action.submit": "Submit",
   "action.vote": "Vote for this idea",
   "action.voted": "Voted!",
+  "admin.general.translation.hint": "You are editing the translations for this language. Empty fields fall back to the default language content below.",
   "editor.markdownmode": "Switch to markdown editor",
   "editor.richtextmode": "Switch to rich text editor",
   "enum.poststatus.completed": "Completed",

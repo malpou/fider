@@ -165,6 +165,28 @@ func TestUpdateTenantSettings_InvalidLocale(t *testing.T) {
 	ExpectFailed(result, "locale")
 }
 
+func TestUpdateTenantSettings_InvalidMessagesI18n(t *testing.T) {
+	RegisterT(t)
+
+	action := actions.UpdateTenantSettings{Title: "Some Name", Locale: "en", MessagesI18n: entity.TenantMessagesI18n{
+		"xx": {WelcomeMessage: "Hello"},
+	}}
+	result := action.Validate(context.Background(), nil)
+	ExpectFailed(result, "messagesI18n")
+
+	action = actions.UpdateTenantSettings{Title: "Some Name", Locale: "en", MessagesI18n: entity.TenantMessagesI18n{
+		"da": {Invitation: "123456789012345678901234567890123456789012345678901234567890123"},
+	}}
+	result = action.Validate(context.Background(), nil)
+	ExpectFailed(result, "messagesI18n")
+
+	action = actions.UpdateTenantSettings{Title: "Some Name", Locale: "en", MessagesI18n: entity.TenantMessagesI18n{
+		"da": {WelcomeMessage: "Velkommen!"},
+	}}
+	result = action.Validate(context.Background(), nil)
+	ExpectSuccess(result)
+}
+
 func TestUpdateTenantSettings_ExistingTenant_WithLogo(t *testing.T) {
 	RegisterT(t)
 

@@ -21,6 +21,7 @@
   "action.submit": "إرسال",
   "action.vote": "صوت لهذه الفكرة",
   "action.voted": "تم التصويت!",
+  "admin.general.translation.hint": "",
   "editor.markdownmode": "الانتقال إلى محرر النصوص (Markdown)",
   "editor.richtextmode": "التبديل إلى محرر نص منسق",
   "enum.poststatus.completed": "اكتمل",

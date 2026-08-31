@@ -35,6 +35,7 @@ type UpdateTenantSettings struct {
 	DescriptionTemplate string
 	CNAME               string
 	Locale              string
+	MessagesI18n        entity.TenantMessagesI18n
 }
 
 type UpdateTenantAdvancedSettings struct {

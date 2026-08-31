@@ -21,6 +21,7 @@
   "action.submit": "Skicka",
   "action.vote": "Rösta på den här idén",
   "action.voted": "Röstade!",
+  "admin.general.translation.hint": "",
   "editor.markdownmode": "Växla till markdown-redigeraren",
   "editor.richtextmode": "Växla till RTF-redigerare",
   "enum.poststatus.completed": "Avslutad",

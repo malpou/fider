@@ -1,5 +1,5 @@
 import { http, Result } from "@fider/services/http"
-import { UserRole, OAuthConfig, ImageUpload, EmailVerificationKind } from "@fider/models"
+import { UserRole, OAuthConfig, ImageUpload, EmailVerificationKind, TenantMessagesI18n } from "@fider/models"
 import { PrivacySettingsPageState } from "@fider/pages/Administration/pages/PrivacySettings.page"
 
 export interface CheckAvailabilityResponse {
@@ -32,6 +32,7 @@ export interface UpdateTenantSettingsRequest {
   descriptionTemplate: string
   cname: string
   locale: string
+  messagesI18n: TenantMessagesI18n
 }
 
 export const updateTenantSettings = async (request: UpdateTenantSettingsRequest): Promise<Result> => {

@@ -21,6 +21,7 @@
   "action.submit": "Υποβολή",
   "action.vote": "Ψηφίστε αυτήν την ιδέα",
   "action.voted": "Ψηφίστηκε!",
+  "admin.general.translation.hint": "",
   "editor.markdownmode": "Μετάβαση στο πρόγραμμα επεξεργασίας markdown",
   "editor.richtextmode": "Μετάβαση σε πρόγραμμα επεξεργασίας εμπλουτισμένου κειμένου",
   "enum.poststatus.completed": "Ολοκληρωμένο",

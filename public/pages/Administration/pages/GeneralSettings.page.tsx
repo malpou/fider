@@ -1,26 +1,64 @@
 import React, { useState } from "react"
 
 import { Button, ButtonClickEvent, TextArea, Form, Input, ImageUploader, Select } from "@fider/components"
+import { HStack } from "@fider/components/layout"
 import { AdminPageContainer } from "../components/AdminBasePage"
 import { actions, Failure, Fider } from "@fider/services"
-import { ImageUpload } from "@fider/models"
+import { ImageUpload, TenantMessages, TenantMessagesI18n, visitorLocales } from "@fider/models"
 import { useFider } from "@fider/hooks"
+import { Trans } from "@lingui/react/macro"
 import locales from "@locale/locales"
 
-const GeneralSettingsPage = () => {
+// The four content fields (and their variants) come from page props with the RAW base
+// values: fider.session.tenant has the request locale's variants overlaid and must
+// never be edited, or an admin browsing in Danish would save overlays into the base.
+interface GeneralSettingsPageProps {
+  welcomeHeader: string
+  welcomeMessage: string
+  invitation: string
+  descriptionTemplate: string
+  messagesI18n: TenantMessagesI18n | null
+}
+
+const GeneralSettingsPage = (props: GeneralSettingsPageProps) => {
   const fider = useFider()
   const [title, setTitle] = useState<string>(fider.session.tenant.name)
-  const [welcomeMessage, setWelcomeMessage] = useState<string>(fider.session.tenant.welcomeMessage)
-  const [welcomeHeader, setWelcomeHeader] = useState<string>(fider.session.tenant.welcomeHeader)
-  const [descriptionTemplate, setDescriptionTemplate] = useState<string>(fider.session.tenant.descriptionTemplate)
-  const [invitation, setInvitation] = useState<string>(fider.session.tenant.invitation)
+  const [welcomeMessage, setWelcomeMessage] = useState<string>(props.welcomeMessage)
+  const [welcomeHeader, setWelcomeHeader] = useState<string>(props.welcomeHeader)
+  const [descriptionTemplate, setDescriptionTemplate] = useState<string>(props.descriptionTemplate)
+  const [invitation, setInvitation] = useState<string>(props.invitation)
+  const [messagesI18n, setMessagesI18n] = useState<TenantMessagesI18n>(props.messagesI18n || {})
   const [logo, setLogo] = useState<ImageUpload | undefined>(undefined)
   const [cname, setCNAME] = useState<string>(fider.session.tenant.cname)
   const [locale, setLocale] = useState<string>(fider.session.tenant.locale)
   const [error, setError] = useState<Failure | undefined>(undefined)
 
+  // The base fields hold the default-language content; the other locale is edited as
+  // overrides. The saved tenant locale decides which tab is the base, so the mapping
+  // doesn't shift while the in-form locale Select is being changed.
+  const baseLocale = visitorLocales.some((l) => l.locale === fider.session.tenant.locale) ? fider.session.tenant.locale : "en"
+  const [editingLocale, setEditingLocale] = useState<string>(baseLocale)
+  const isBaseLocale = editingLocale === baseLocale
+  const variant = messagesI18n[editingLocale] || {}
+
+  const setVariantField = (field: keyof TenantMessages) => (value: string) => {
+    setMessagesI18n({ ...messagesI18n, [editingLocale]: { ...variant, [field]: value } })
+  }
+
+  const fieldValue = (field: keyof TenantMessages, baseValue: string) => (isBaseLocale ? baseValue : variant[field] || "")
+
   const handleSave = async (e: ButtonClickEvent) => {
-    const result = await actions.updateTenantSettings({ title, cname, welcomeMessage, welcomeHeader, descriptionTemplate, invitation, logo, locale })
+    const result = await actions.updateTenantSettings({
+      title,
+      cname,
+      welcomeMessage,
+      welcomeHeader,
+      descriptionTemplate,
+      invitation,
+      logo,
+      locale,
+      messagesI18n,
+    })
     if (result.ok) {
       e.preventEnable()
       location.href = `/`
@@ -50,14 +88,31 @@ const GeneralSettingsPage = () => {
           <p className="text-muted">Keep it short and snappy. Your product / service name is usually best.</p>
         </Input>
 
+        <div className="field">
+          <HStack spacing={2}>
+            {visitorLocales.map((l) => (
+              <Button key={l.locale} size="small" variant={editingLocale === l.locale ? "primary" : "secondary"} onClick={() => setEditingLocale(l.locale)}>
+                {l.text}
+              </Button>
+            ))}
+          </HStack>
+          {!isBaseLocale && (
+            <p className="text-muted mt-1">
+              <Trans id="admin.general.translation.hint">
+                You are editing the translations for this language. Empty fields fall back to the default language content below.
+              </Trans>
+            </p>
+          )}
+        </div>
+
         <Input
           field="welcomeHeader"
           label="Welcome Header"
           maxLength={100}
-          value={welcomeHeader}
+          value={fieldValue("welcomeHeader", welcomeHeader)}
           disabled={!fider.session.user.isAdministrator}
           placeholder="Help us build the _best feedback platform_"
-          onChange={setWelcomeHeader}
+          onChange={isBaseLocale ? setWelcomeHeader : setVariantField("welcomeHeader")}
         >
           <p className="text-muted">
             Large header text shown on the home page. Leave empty to hide. Wrap text with underscores (e.g., _highlighted_) to show it in blue.
@@ -67,9 +122,9 @@ const GeneralSettingsPage = () => {
         <TextArea
           field="welcomeMessage"
           label="Welcome Message"
-          value={welcomeMessage}
+          value={fieldValue("welcomeMessage", welcomeMessage)}
           disabled={!fider.session.user.isAdministrator}
-          onChange={setWelcomeMessage}
+          onChange={isBaseLocale ? setWelcomeMessage : setVariantField("welcomeMessage")}
         >
           <p className="text-muted">
             The message is shown on this site&apos;s home page. Use it to help visitors understand what this space is about and the importance of their
@@ -80,9 +135,9 @@ const GeneralSettingsPage = () => {
         <TextArea
           field="descriptionTemplate"
           label="Default for New Ideas"
-          value={descriptionTemplate}
+          value={fieldValue("descriptionTemplate", descriptionTemplate)}
           disabled={!fider.session.user.isAdministrator}
-          onChange={setDescriptionTemplate}
+          onChange={isBaseLocale ? setDescriptionTemplate : setVariantField("descriptionTemplate")}
         >
           <p className="text-muted">If set, all new ideas submitted by users will use this text as the default description.</p>
         </TextArea>
@@ -91,10 +146,10 @@ const GeneralSettingsPage = () => {
           field="invitation"
           label="Invitation"
           maxLength={60}
-          value={invitation}
+          value={fieldValue("invitation", invitation)}
           disabled={!fider.session.user.isAdministrator}
           placeholder="Enter your suggestion here..."
-          onChange={setInvitation}
+          onChange={isBaseLocale ? setInvitation : setVariantField("invitation")}
         >
           <p className="text-muted">Placeholder text in the suggestion&apos;s box. It should invite your visitors into sharing their feedback.</p>
         </Input>

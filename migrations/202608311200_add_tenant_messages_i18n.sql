@@ -1,0 +1,1 @@
+ALTER TABLE tenants ADD COLUMN messages_i18n JSONB NULL;

@@ -21,6 +21,7 @@
   "action.submit": "Продолжить",
   "action.vote": "Проголосуйте за эту идею",
   "action.voted": "Проголосовал!",
+  "admin.general.translation.hint": "",
   "editor.markdownmode": "Переключиться на редактор разметки",
   "editor.richtextmode": "Переключиться на редактор форматированного текста",
   "enum.poststatus.completed": "Выполнено",

@@ -7,6 +7,7 @@ import (
 	"github.com/getfider/fider/app"
 	"github.com/getfider/fider/app/actions"
 	"github.com/getfider/fider/app/models/dto"
+	"github.com/getfider/fider/app/models/entity"
 	"github.com/getfider/fider/app/models/enum"
 	"github.com/getfider/fider/app/models/query"
 
@@ -215,6 +216,48 @@ func TestTenantStorage_UpdateSettings(t *testing.T) {
 	Expect(getByDomain.Result.CNAME).Equals("demo.company.com")
 	Expect(getByDomain.Result.Locale).Equals("pt-BR")
 	Expect(getByDomain.Result.LogoBlobKey).Equals("some-logo-key.png")
+}
+
+func TestTenantStorage_UpdateSettings_MessagesI18n(t *testing.T) {
+	SetupDatabaseTest(t)
+	defer TeardownDatabaseTest()
+
+	err := bus.Dispatch(demoTenantCtx, &cmd.UpdateTenantSettings{
+		Logo:           &dto.ImageUpload{},
+		Title:          "Demonstration",
+		WelcomeMessage: "Welcome!",
+		Locale:         "en",
+		MessagesI18n: entity.TenantMessagesI18n{
+			"da": {WelcomeMessage: "Velkommen!"},
+			"en": {WelcomeMessage: "Stale override"},
+			"fr": {},
+		},
+	})
+	Expect(err).IsNil()
+
+	getByDomain := &query.GetTenantByDomain{Domain: "demo"}
+	err = bus.Dispatch(demoTenantCtx, getByDomain)
+	Expect(err).IsNil()
+	Expect(getByDomain.Result.WelcomeMessage).Equals("Welcome!")
+
+	// the base-locale entry and empty variants are dropped, only real variants persist
+	Expect(getByDomain.Result.MessagesI18n).Equals(entity.TenantMessagesI18n{
+		"da": {WelcomeMessage: "Velkommen!"},
+	})
+	Expect(getByDomain.Result.Localized("da").WelcomeMessage).Equals("Velkommen!")
+
+	// saving without variants clears the column
+	err = bus.Dispatch(demoTenantCtx, &cmd.UpdateTenantSettings{
+		Logo:           &dto.ImageUpload{},
+		Title:          "Demonstration",
+		WelcomeMessage: "Welcome!",
+		Locale:         "en",
+	})
+	Expect(err).IsNil()
+
+	err = bus.Dispatch(demoTenantCtx, getByDomain)
+	Expect(err).IsNil()
+	Expect(len(getByDomain.Result.MessagesI18n)).Equals(0)
 }
 
 func TestTenantStorage_AdvancedSettings(t *testing.T) {

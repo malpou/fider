@@ -2,12 +2,7 @@ import IconGlobe from "@fider/assets/images/lucide-globe.svg"
 import React from "react"
 import { Dropdown, Icon } from "./common"
 import { useFider } from "@fider/hooks"
-
-// ponytail: deliberately only English and Danish for now, not all of AllLocales
-const languages = [
-  { locale: "en", text: "English" },
-  { locale: "da", text: "Dansk" },
-]
+import { visitorLocales } from "@fider/models"
 
 export const LanguageSwitcher = () => {
   const fider = useFider()
@@ -22,7 +17,7 @@ export const LanguageSwitcher = () => {
 
   return (
     <Dropdown position="left" renderHandle={<Icon sprite={IconGlobe} className="h-6 text-gray-500" />}>
-      {languages.map((language) => (
+      {visitorLocales.map((language) => (
         <Dropdown.ListItem
           key={language.locale}
           onClick={changeLanguage(language.locale)}

@@ -26,9 +26,10 @@ type Tenant struct {
 	IsFeedEnabled         bool   `db:"is_feed_enabled"`
 	PreventIndexing       bool   `db:"prevent_indexing"`
 	IsModerationEnabled   bool   `db:"is_moderation_enabled"`
-	IsPro                 bool         `db:"is_pro"`
-	HasPaddleSubscription bool         `db:"has_paddle_subscription"`
-	ScheduledDeletionAt   dbx.NullTime `db:"scheduled_deletion_at"`
+	IsPro                 bool                      `db:"is_pro"`
+	HasPaddleSubscription bool                      `db:"has_paddle_subscription"`
+	ScheduledDeletionAt   dbx.NullTime              `db:"scheduled_deletion_at"`
+	MessagesI18n          entity.TenantMessagesI18n `db:"messages_i18n"`
 }
 
 func (t *Tenant) ToModel() *entity.Tenant {
@@ -63,6 +64,7 @@ func (t *Tenant) ToModel() *entity.Tenant {
 		PreventIndexing:     t.PreventIndexing,
 		IsModerationEnabled: isPro && t.IsModerationEnabled,
 		IsPro:               isPro,
+		MessagesI18n:        t.MessagesI18n,
 	}
 
 	if t.ScheduledDeletionAt.Valid {

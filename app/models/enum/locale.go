@@ -109,6 +109,16 @@ var (
 		IsRTL:             false,
 	}
 
+	// LocaleDanish represents Danish
+	LocaleDanish = Locale{
+		Code:              "da",
+		Name:              "Danish",
+		MessageFormatCode: "da",
+		PostgresConfig:    "danish",
+		LinguaLanguage:    lingua.Danish,
+		IsRTL:             false,
+	}
+
 	// LocaleDutch represents Dutch
 	LocaleDutch = Locale{
 		Code:              "nl",
@@ -220,6 +230,7 @@ var (
 		LocaleItalian,
 		LocaleJapanese,
 		LocaleKorean,
+		LocaleDanish,
 		LocaleDutch,
 		LocalePolish,
 		LocaleRussian,

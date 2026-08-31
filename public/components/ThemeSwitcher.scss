@@ -1,6 +1,11 @@
 .c-themeswitcher {
   border: none;
   background: transparent;
+  // Buttons keep the UA's default padding unless told otherwise, which left
+  // this toggle sitting a hair off the padding-0 dropdown handles beside it.
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
   color: var(--colors-gray-700);
   cursor: pointer;
 }

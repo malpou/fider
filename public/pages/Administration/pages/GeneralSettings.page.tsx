@@ -1,13 +1,12 @@
 import React, { useState } from "react"
 
-import { Button, ButtonClickEvent, TextArea, Form, Input, ImageUploader, Select } from "@fider/components"
+import { Button, ButtonClickEvent, TextArea, Form, Input, ImageUploader } from "@fider/components"
 import { HStack } from "@fider/components/layout"
 import { AdminPageContainer } from "../components/AdminBasePage"
 import { actions, Failure, Fider } from "@fider/services"
 import { ImageUpload, TenantMessages, TenantMessagesI18n, visitorLocales } from "@fider/models"
 import { useFider } from "@fider/hooks"
 import { Trans } from "@lingui/react/macro"
-import locales from "@locale/locales"
 
 // The four content fields (and their variants) come from page props with the RAW base
 // values: fider.session.tenant has the request locale's variants overlaid and must
@@ -30,12 +29,14 @@ const GeneralSettingsPage = (props: GeneralSettingsPageProps) => {
   const [messagesI18n, setMessagesI18n] = useState<TenantMessagesI18n>(props.messagesI18n || {})
   const [logo, setLogo] = useState<ImageUpload | undefined>(undefined)
   const [cname, setCNAME] = useState<string>(fider.session.tenant.cname)
-  const [locale, setLocale] = useState<string>(fider.session.tenant.locale)
+  // The tenant locale Select is removed: da/en visitor content is handled by the
+  // per-locale variants below plus the visitor switcher, so a tenant-wide locale
+  // change would only mislead. The saved value still round-trips on save.
+  const [locale] = useState<string>(fider.session.tenant.locale)
   const [error, setError] = useState<Failure | undefined>(undefined)
 
   // The base fields hold the default-language content; the other locale is edited as
-  // overrides. The saved tenant locale decides which tab is the base, so the mapping
-  // doesn't shift while the in-form locale Select is being changed.
+  // overrides. The saved tenant locale decides which tab is the base.
   const baseLocale = visitorLocales.some((l) => l.locale === fider.session.tenant.locale) ? fider.session.tenant.locale : "en"
   const [editingLocale, setEditingLocale] = useState<string>(baseLocale)
   const isBaseLocale = editingLocale === baseLocale
@@ -183,31 +184,6 @@ const GeneralSettingsPage = (props: GeneralSettingsPageProps) => {
             </div>
           </Input>
         )}
-
-        <Select
-          label="Locale"
-          field="locale"
-          defaultValue={locale}
-          options={Object.entries(locales).map(([k, v]) => ({
-            value: k,
-            label: v.text,
-          }))}
-          onChange={(o) => setLocale(o?.value || "en")}
-        >
-          {locale !== "en" && (
-            <>
-              <p className="text-muted">
-                This language is translated by the Open Source community. If you find a mistake or would like to improve its quality, you can find the
-                translations on{" "}
-                <a className="text-link" target="_blank" rel="noopener" href="https://github.com/getfider/fider/tree/main/locale">
-                  GitHub
-                </a>{" "}
-                and contribute with your own translations.
-              </p>
-              <p className="text-muted">Only public pages are translated. Internal and/or administrative pages will remain in English.</p>
-            </>
-          )}
-        </Select>
 
         <div className="field">
           <Button disabled={!fider.session.user.isAdministrator} variant="primary" onClick={handleSave}>

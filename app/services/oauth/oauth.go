@@ -490,5 +490,21 @@ func getConfig(ctx context.Context, provider string) (*entity.OAuthConfig, error
 		return nil, err
 	}
 
-	return getCustomOAuth.Result, nil
+	return withEnvSecret(getCustomOAuth.Result), nil
+}
+
+// withEnvSecret swaps in OAUTH_CUSTOM_SECRET when the custom provider's client ID
+// matches OAUTH_CUSTOM_CLIENTID. Only the sign-in flow reads through here, so the
+// env secret is never shown in the admin UI nor saved to the database.
+func withEnvSecret(config *entity.OAuthConfig) *entity.OAuthConfig {
+	if config == nil {
+		return nil
+	}
+	secret, ok := env.CustomOAuthSecret(config.ClientID)
+	if !ok {
+		return config
+	}
+	overridden := *config
+	overridden.ClientSecret = secret
+	return &overridden
 }

@@ -116,6 +116,14 @@ func (action *CreateEditOAuthConfig) Validate(ctx context.Context, user *entity.
 		if action.ClientSecret == "" {
 			action.ClientSecret = getConfig.Result.ClientSecret
 		}
+		// Credentials supplied by OAUTH_CUSTOM_CLIENTID/OAUTH_CUSTOM_SECRET are not editable here:
+		// the client ID must stay as is and any submitted secret is ignored.
+		if getConfig.Result.IsClientSecretFromEnv() {
+			if action.ClientID != getConfig.Result.ClientID {
+				result.AddFieldFailure("clientID", "Client ID is managed by environment (OAUTH_CUSTOM_CLIENTID).")
+			}
+			action.ClientSecret = getConfig.Result.ClientSecret
+		}
 	} else {
 		action.Provider = "_" + strings.ToLower(rand.String(10))
 	}

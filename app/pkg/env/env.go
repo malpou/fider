@@ -105,6 +105,12 @@ type config struct {
 			ClientID string `env:"OAUTH_GITHUB_CLIENTID"`
 			Secret   string `env:"OAUTH_GITHUB_SECRET"`
 		}
+		// Custom overrides the stored client secret of the custom OAuth provider
+		// whose client ID matches, so the secret can come from the environment.
+		Custom struct {
+			ClientID string `env:"OAUTH_CUSTOM_CLIENTID"`
+			Secret   string `env:"OAUTH_CUSTOM_SECRET"`
+		}
 	}
 	Email struct {
 		Type      string `env:"EMAIL"` // possible values: smtp, mailgun, awsses
@@ -222,6 +228,16 @@ func mustBeSet(name string) {
 	if value == "" {
 		panic(fmt.Errorf("could not find environment variable named '%s'", name))
 	}
+}
+
+// CustomOAuthSecret returns OAUTH_CUSTOM_SECRET when both OAUTH_CUSTOM_CLIENTID
+// and OAUTH_CUSTOM_SECRET are set and clientID matches OAUTH_CUSTOM_CLIENTID.
+func CustomOAuthSecret(clientID string) (string, bool) {
+	custom := Config.OAuth.Custom
+	if custom.ClientID == "" || custom.Secret == "" || clientID != custom.ClientID {
+		return "", false
+	}
+	return custom.Secret, true
 }
 
 // IsSingleHostMode returns true if host mode is set to single tenant

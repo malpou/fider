@@ -14,6 +14,7 @@ import (
 	"github.com/getfider/fider/app/models/query"
 	. "github.com/getfider/fider/app/pkg/assert"
 	"github.com/getfider/fider/app/pkg/bus"
+	"github.com/getfider/fider/app/pkg/env"
 	"github.com/getfider/fider/app/pkg/rand"
 )
 
@@ -246,4 +247,64 @@ func TestCreateEditOAuthConfig_NullLogo(t *testing.T) {
 	result := action.Validate(ctx, nil)
 	ExpectSuccess(result)
 	Expect(action.Logo).IsNotNil()
+}
+
+func envManagedOAuthSetup(t *testing.T) *actions.CreateEditOAuthConfig {
+	original := env.Config.OAuth.Custom
+	env.Config.OAuth.Custom.ClientID = "ENV_CL_ID"
+	env.Config.OAuth.Custom.Secret = "ENV_SECRET"
+	t.Cleanup(func() { env.Config.OAuth.Custom = original })
+
+	bus.AddHandler(func(ctx context.Context, q *query.GetCustomOAuthConfigByProvider) error {
+		q.Result = &entity.OAuthConfig{
+			ID:           6,
+			Provider:     q.Provider,
+			DisplayName:  "My Provider",
+			ClientID:     "ENV_CL_ID",
+			ClientSecret: "STORED_SECRET",
+		}
+		return nil
+	})
+	bus.AddHandler(func(ctx context.Context, q *query.ListActiveOAuthProviders) error {
+		q.Result = []*dto.OAuthProviderOption{}
+		return nil
+	})
+
+	action := actions.NewCreateEditOAuthConfig()
+	action.Provider = "_ENV"
+	action.DisplayName = "My Provider renamed"
+	action.Status = enum.OAuthConfigDisabled
+	action.ClientID = "ENV_CL_ID"
+	action.AuthorizeURL = "http://provider/oauth/authorize"
+	action.TokenURL = "http://provider/oauth/token"
+	action.Scope = "openid profile email"
+	action.ProfileURL = "http://provider/profile/me"
+	action.JSONUserIDPath = "sub"
+	action.JSONUserNamePath = "name"
+	action.JSONUserEmailPath = "email"
+	return action
+}
+
+func TestCreateEditOAuthConfig_EnvManaged_KeepsStoredCredentials(t *testing.T) {
+	for _, submitted := range []string{"", "NEW_SECRET"} {
+		RegisterT(t)
+		action := envManagedOAuthSetup(t)
+		action.ClientSecret = submitted
+		ctx := context.WithValue(context.Background(), app.TenantCtxKey, &entity.Tenant{IsEmailAuthAllowed: true})
+
+		result := action.Validate(ctx, nil)
+		ExpectSuccess(result)
+		Expect(action.ClientID).Equals("ENV_CL_ID")
+		Expect(action.ClientSecret).Equals("STORED_SECRET")
+	}
+}
+
+func TestCreateEditOAuthConfig_EnvManaged_RejectsClientIDChange(t *testing.T) {
+	RegisterT(t)
+	action := envManagedOAuthSetup(t)
+	action.ClientID = "SOMETHING_ELSE"
+	ctx := context.WithValue(context.Background(), app.TenantCtxKey, &entity.Tenant{IsEmailAuthAllowed: true})
+
+	result := action.Validate(ctx, nil)
+	ExpectFailed(result, "clientID")
 }

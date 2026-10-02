@@ -33,6 +33,7 @@ export const OAuthForm: React.FC<OAuthFormProps> = (props) => {
   const [logoURL, setLogoURL] = useState<string | undefined>()
   const [logoBlobKey, setLogoBlobKey] = useState((props.config && props.config.logoBlobKey) || "")
   const [error, setError] = useState<Failure | undefined>()
+  const credentialsFromEnv = (props.config && props.config.clientSecretFromEnv) || false
 
   const handleSave = async () => {
     const result = await actions.saveOAuthConfig({
@@ -101,7 +102,14 @@ export const OAuthForm: React.FC<OAuthFormProps> = (props) => {
           </p>
         </ImageUploader>
 
-        <Input field="clientID" label="Client ID" maxLength={100} value={clientID} disabled={!fider.session.user.isAdministrator} onChange={setClientID} />
+        <Input
+          field="clientID"
+          label="Client ID"
+          maxLength={100}
+          value={clientID}
+          disabled={!fider.session.user.isAdministrator || credentialsFromEnv}
+          onChange={setClientID}
+        />
 
         <Input
           field="clientSecret"
@@ -111,7 +119,7 @@ export const OAuthForm: React.FC<OAuthFormProps> = (props) => {
           disabled={!clientSecretEnabled}
           onChange={setClientSecret}
           afterLabel={
-            !clientSecretEnabled ? (
+            credentialsFromEnv ? undefined : !clientSecretEnabled ? (
               <>
                 <span className="text-muted"> omitted for security reasons.</span>
                 <span className="text-link text-normal text-xs ml-1" onClick={enableClientSecret}>
@@ -120,7 +128,9 @@ export const OAuthForm: React.FC<OAuthFormProps> = (props) => {
               </>
             ) : undefined
           }
-        />
+        >
+          {credentialsFromEnv && <p className="text-muted">Managed by environment (OAUTH_CUSTOM_CLIENTID / OAUTH_CUSTOM_SECRET).</p>}
+        </Input>
         <Input
           field="authorizeURL"
           label="Authorize URL"

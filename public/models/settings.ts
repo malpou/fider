@@ -39,6 +39,7 @@ export interface OAuthConfig {
   status: number
   clientID: string
   clientSecret: string
+  clientSecretFromEnv: boolean
   authorizeURL: string
   tokenURL: string
   profileURL: string

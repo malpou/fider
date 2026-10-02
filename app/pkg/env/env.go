@@ -102,6 +102,12 @@ type config struct {
 			ClientID string `env:"OAUTH_GITHUB_CLIENTID"`
 			Secret   string `env:"OAUTH_GITHUB_SECRET"`
 		}
+		// Custom overrides the stored client secret of the custom OAuth provider
+		// whose client ID matches, so the secret can come from the environment.
+		Custom struct {
+			ClientID string `env:"OAUTH_CUSTOM_CLIENTID"`
+			Secret   string `env:"OAUTH_CUSTOM_SECRET"`
+		}
 	}
 	Email struct {
 		Type      string `env:"EMAIL"` // possible values: smtp, mailgun, awsses

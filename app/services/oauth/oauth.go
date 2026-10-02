@@ -497,11 +497,14 @@ func getConfig(ctx context.Context, provider string) (*entity.OAuthConfig, error
 // matches OAUTH_CUSTOM_CLIENTID. Only the sign-in flow reads through here, so the
 // env secret is never shown in the admin UI nor saved to the database.
 func withEnvSecret(config *entity.OAuthConfig) *entity.OAuthConfig {
-	custom := env.Config.OAuth.Custom
-	if config == nil || custom.ClientID == "" || custom.Secret == "" || config.ClientID != custom.ClientID {
+	if config == nil {
+		return nil
+	}
+	secret, ok := env.CustomOAuthSecret(config.ClientID)
+	if !ok {
 		return config
 	}
 	overridden := *config
-	overridden.ClientSecret = custom.Secret
+	overridden.ClientSecret = secret
 	return &overridden
 }

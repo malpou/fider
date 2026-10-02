@@ -226,6 +226,16 @@ func mustBeSet(name string) {
 }
 
 // IsSingleHostMode returns true if host mode is set to single tenant
+// CustomOAuthSecret returns OAUTH_CUSTOM_SECRET when both OAUTH_CUSTOM_CLIENTID
+// and OAUTH_CUSTOM_SECRET are set and clientID matches OAUTH_CUSTOM_CLIENTID.
+func CustomOAuthSecret(clientID string) (string, bool) {
+	custom := Config.OAuth.Custom
+	if custom.ClientID == "" || custom.Secret == "" || clientID != custom.ClientID {
+		return "", false
+	}
+	return custom.Secret, true
+}
+
 func IsSingleHostMode() bool {
 	return Config.HostMode == "single"
 }

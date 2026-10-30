@@ -20,7 +20,6 @@ import (
 	"github.com/getfider/fider/app/models/query"
 	"github.com/getfider/fider/app/pkg/bus"
 
-	"github.com/getfider/fider/app"
 	"github.com/getfider/fider/app/pkg/env"
 	"github.com/getfider/fider/app/pkg/errors"
 	"github.com/getfider/fider/app/pkg/jwt"
@@ -250,98 +249,15 @@ func OAuthToken() web.HandlerFunc {
 			return c.Failure(err)
 		}
 
-		// Look up the existing Fider user first (by provider UID, then by email).
-		// We need this before the role check so that administrators and collaborators
-		// can always sign in regardless of OAuth role changes.
-		var user *entity.User
-
-		userByProvider := &query.GetUserByProvider{Provider: provider, UID: oauthUser.Result.ID}
-		err = bus.Dispatch(c, userByProvider)
-		user = userByProvider.Result
-
-		if errors.Cause(err) == app.ErrNotFound && oauthUser.Result.Email != "" {
-			userByEmail := &query.GetUserByEmail{Email: oauthUser.Result.Email}
-			err = bus.Dispatch(c, userByEmail)
-			user = userByEmail.Result
-		}
-
-		// Check if user has the required roles for this provider.
-		// Both AllowedRoles and JSONUserRolesPath must be set on the provider for the check to run.
-		// Administrators and collaborators already trusted in Fider are always allowed through,
-		// regardless of their current OAuth roles.
-		var providerRolesPath, providerAllowedRoles string
-		if customConfig != nil {
-			providerRolesPath = customConfig.JSONUserRolesPath
-			providerAllowedRoles = customConfig.AllowedRoles
-		}
-
-		// Resolve the Fider role the provider's role mapping assigns to this user.
-		// A user mapped to collaborator or administrator is implicitly allowed through
-		// the allowed-roles gate, mirroring the isFiderPrivileged bypass below.
-		mappedRole, hasMappedRole := enum.RoleVisitor, false
-		if customConfig != nil && providerRolesPath != "" {
-			mappedRole, hasMappedRole = resolveMappedRole(oauthUser.Result.Roles, customConfig.AdminRoles, customConfig.CollaboratorRoles)
-		}
-
-		isFiderPrivileged := user != nil && (user.Role == enum.RoleAdministrator || user.Role == enum.RoleCollaborator)
-		isMappedPrivileged := hasMappedRole && mappedRole >= enum.RoleCollaborator
-		if !isFiderPrivileged && !isMappedPrivileged && !hasAllowedRole(oauthUser.Result.Roles, providerRolesPath, providerAllowedRoles) {
-			log.Warnf(c, "User @{UserID} attempted OAuth login but does not have required role. User roles: @{UserRoles}, Allowed roles: @{AllowedRoles}",
-				dto.Props{
-					"UserID":       oauthUser.Result.ID,
-					"UserRoles":    oauthUser.Result.Roles,
-					"AllowedRoles": providerAllowedRoles,
-				})
-			return c.Redirect("/access-denied")
-		}
+		user, outcome, err := SignInExternalUser(c, provider, oauthUser.Result, customConfig)
 		if err != nil {
-			if errors.Cause(err) == app.ErrNotFound {
-				isTrusted := customConfig != nil && customConfig.IsTrusted
-				if c.Tenant().IsPrivate && !isTrusted {
-					return c.Redirect("/not-invited")
-				}
-
-				role := enum.RoleVisitor
-				if hasMappedRole {
-					role = mappedRole
-				}
-
-				user = &entity.User{
-					Name:   oauthUser.Result.Name,
-					Tenant: c.Tenant(),
-					Email:  oauthUser.Result.Email,
-					Role:   role,
-					Providers: []*entity.UserProvider{
-						{
-							UID:  oauthUser.Result.ID,
-							Name: provider,
-						},
-					},
-				}
-
-				if err = bus.Dispatch(c, &cmd.RegisterUser{User: user}); err != nil {
-					return c.Failure(err)
-				}
-			} else {
-				return c.Failure(err)
-			}
-		} else if !user.HasProvider(provider) {
-			if err = bus.Dispatch(c, &cmd.RegisterUserProvider{
-				UserID:       user.ID,
-				ProviderName: provider,
-				ProviderUID:  oauthUser.Result.ID,
-			}); err != nil {
-				return c.Failure(err)
-			}
+			return c.Failure(err)
 		}
-
-		// Sync the Fider role with the provider's role mapping on every sign in.
-		// The identity provider is the source of truth: users are promoted and
-		// demoted to whatever their current roles map to.
-		if hasMappedRole && user.Role != mappedRole {
-			if err := syncUserRole(c, user, mappedRole); err != nil {
-				return c.Failure(err)
-			}
+		switch outcome {
+		case ExternalSignInDenied:
+			return c.Redirect("/access-denied")
+		case ExternalSignInNotInvited:
+			return c.Redirect("/not-invited")
 		}
 
 		webutil.AddAuthUserCookie(c, user)

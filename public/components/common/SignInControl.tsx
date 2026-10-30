@@ -171,6 +171,18 @@ export const SignInControl: React.FunctionComponent<SignInControlProps> = (props
     }
   }
 
+  // Behind guard, sign in is guard's: one button to its login, which returns here.
+  if (fider.settings.guardIdentity) {
+    const returnTo = props.redirectTo || (typeof location !== "undefined" ? location.pathname + location.search : "/")
+    return (
+      <div className="c-signin-control">
+        <Button className="w-full justify-center" variant="primary" href={`/.well-known/bastion/login?return_to=${encodeURIComponent(returnTo)}`}>
+          <Trans id="action.signin">Sign in</Trans>
+        </Button>
+      </div>
+    )
+  }
+
   if (!isCookieEnabled()) {
     return (
       <Message type="error">

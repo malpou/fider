@@ -18,6 +18,7 @@ import (
 	"github.com/getfider/fider/app/models/query"
 	. "github.com/getfider/fider/app/pkg/assert"
 	"github.com/getfider/fider/app/pkg/bus"
+	"github.com/getfider/fider/app/pkg/env"
 	"github.com/getfider/fider/app/pkg/jwt"
 	"github.com/getfider/fider/app/pkg/mock"
 	"github.com/getfider/fider/app/pkg/web"
@@ -791,6 +792,51 @@ func TestSignInPageHandler_PrivateTenant_UnauthenticatedUser(t *testing.T) {
 		Execute(handlers.SignInPage())
 
 	Expect(code).Equals(http.StatusOK)
+}
+
+func TestSignInPageHandler_GuardIdentity_RedirectsToGuardLogin(t *testing.T) {
+	RegisterT(t)
+	env.Config.GuardIdentity.Enabled = true
+
+	server := mock.NewServer()
+	mock.DemoTenant.IsPrivate = true
+
+	code, response := server.
+		OnTenant(mock.DemoTenant).
+		WithURL("http://demo.test.fider.io/signin?redirect=%2Fposts%2F1%3Fx%3D1").
+		Execute(handlers.SignInPage())
+
+	Expect(code).Equals(http.StatusTemporaryRedirect)
+	Expect(response.Header().Get("Location")).Equals("/.well-known/bastion/login?return_to=%2Fposts%2F1%3Fx%3D1")
+}
+
+func TestSignInPageHandler_GuardIdentity_ForeignRedirectReturnsHome(t *testing.T) {
+	RegisterT(t)
+	env.Config.GuardIdentity.Enabled = true
+
+	server := mock.NewServer()
+	code, response := server.
+		OnTenant(mock.DemoTenant).
+		WithURL("http://demo.test.fider.io/signin?redirect=https%3A%2F%2Fevil.test%2F").
+		Execute(handlers.SignInPage())
+
+	Expect(code).Equals(http.StatusTemporaryRedirect)
+	Expect(response.Header().Get("Location")).Equals("/.well-known/bastion/login?return_to=%2F")
+}
+
+func TestSignOutHandler_GuardIdentity_RedirectsToGuardLogout(t *testing.T) {
+	RegisterT(t)
+	env.Config.GuardIdentity.Enabled = true
+
+	server := mock.NewServer()
+	code, response := server.
+		OnTenant(mock.DemoTenant).
+		AsUser(mock.JonSnow).
+		WithURL("http://demo.test.fider.io/signout").
+		Execute(handlers.SignOut())
+
+	Expect(code).Equals(http.StatusTemporaryRedirect)
+	Expect(response.Header().Get("Location")).Equals("/.well-known/bastion/logout")
 }
 
 func TestVerifySignInCodeHandler_InvalidCode(t *testing.T) {

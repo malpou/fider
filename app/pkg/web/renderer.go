@@ -221,6 +221,7 @@ func (r *Renderer) Render(w io.Writer, statusCode int, props Props, ctx *Context
 		"oauth":               oauthProviders.Result,
 		"postWithTags":        env.Config.PostCreationWithTagsEnabled,
 		"allowAllowedSchemes": env.Config.AllowAllowedSchemes,
+		"guardIdentity":       env.Config.GuardIdentity.Enabled,
 	}
 
 	if ctx.IsAuthenticated() {

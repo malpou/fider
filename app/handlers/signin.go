@@ -13,6 +13,7 @@ import (
 	"github.com/getfider/fider/app/actions"
 	"github.com/getfider/fider/app/models/query"
 	"github.com/getfider/fider/app/pkg/bus"
+	"github.com/getfider/fider/app/pkg/env"
 	"github.com/getfider/fider/app/pkg/errors"
 	"github.com/getfider/fider/app/pkg/web"
 	webutil "github.com/getfider/fider/app/pkg/web/util"
@@ -22,6 +23,9 @@ import (
 // SignInPage renders the sign in page
 func SignInPage() web.HandlerFunc {
 	return func(c *web.Context) error {
+		if env.Config.GuardIdentity.Enabled {
+			return c.Redirect(guardLoginURL(c, c.QueryParam("redirect")))
+		}
 
 		if c.Tenant().IsPrivate {
 			return c.Page(http.StatusOK, web.Props{
@@ -426,6 +430,9 @@ func CompleteSignInProfile() web.HandlerFunc {
 func SignOut() web.HandlerFunc {
 	return func(c *web.Context) error {
 		c.RemoveCookie(web.CookieAuthName)
+		if env.Config.GuardIdentity.Enabled {
+			return c.Redirect(guardLogoutPath)
+		}
 		return c.Redirect("/")
 	}
 }

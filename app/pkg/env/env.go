@@ -102,12 +102,25 @@ type config struct {
 			ClientID string `env:"OAUTH_GITHUB_CLIENTID"`
 			Secret   string `env:"OAUTH_GITHUB_SECRET"`
 		}
-		// Custom overrides the stored client secret of the custom OAuth provider
-		// whose client ID matches, so the secret can come from the environment.
-		Custom struct {
-			ClientID string `env:"OAUTH_CUSTOM_CLIENTID"`
-			Secret   string `env:"OAUTH_CUSTOM_SECRET"`
-		}
+	}
+	// GuardIdentity signs users in from the identity guard (the edge proxy in front of
+	// Fider) verifies and hands upstream in the x-bastion-identity header, instead of
+	// from Fider's own auth cookie. Guard owns the login, the session and the logout.
+	GuardIdentity struct {
+		Enabled bool `env:"GUARD_IDENTITY_ENABLED,default=false"`
+		// JWKSURL is guard's key set; empty means edgeauth.DefaultJWKSURL (in-cluster guard).
+		JWKSURL string `env:"PLATFORM_KIT_EDGEAUTH_JWKS_URL"`
+		// Audiences are the hosts Fider is served on, comma separated.
+		Audiences string `env:"PLATFORM_KIT_EDGEAUTH_AUDIENCES"`
+		// Provider is the user_providers name the identity's subject is stored under.
+		// Set it to an existing custom OAuth provider's key to keep the users that
+		// provider signed in linked to their accounts.
+		Provider string `env:"GUARD_IDENTITY_PROVIDER,default=_guard"`
+		// The role mapping, applied on every request like a custom provider's
+		// (comma separated role keys from the identity's roles claim).
+		AdminRoles        string `env:"GUARD_IDENTITY_ADMIN_ROLES,default=fider-admin"`
+		CollaboratorRoles string `env:"GUARD_IDENTITY_COLLABORATOR_ROLES"`
+		AllowedRoles      string `env:"GUARD_IDENTITY_ALLOWED_ROLES,default=fider-user"`
 	}
 	Email struct {
 		Type      string `env:"EMAIL"` // possible values: smtp, mailgun, awsses
@@ -186,6 +199,10 @@ func Reload() {
 		}
 	}
 
+	if Config.GuardIdentity.Enabled {
+		mustBeSet("PLATFORM_KIT_EDGEAUTH_AUDIENCES")
+	}
+
 	// Email Type can be inferred if absense
 	if Config.Email.Type == "" {
 		if Config.Email.Mailgun.APIKey != "" {
@@ -226,16 +243,6 @@ func mustBeSet(name string) {
 }
 
 // IsSingleHostMode returns true if host mode is set to single tenant
-// CustomOAuthSecret returns OAUTH_CUSTOM_SECRET when both OAUTH_CUSTOM_CLIENTID
-// and OAUTH_CUSTOM_SECRET are set and clientID matches OAUTH_CUSTOM_CLIENTID.
-func CustomOAuthSecret(clientID string) (string, bool) {
-	custom := Config.OAuth.Custom
-	if custom.ClientID == "" || custom.Secret == "" || clientID != custom.ClientID {
-		return "", false
-	}
-	return custom.Secret, true
-}
-
 func IsSingleHostMode() bool {
 	return Config.HostMode == "single"
 }

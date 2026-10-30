@@ -1,0 +1,12 @@
+version: "2"
+
+# Default linters. node_modules is excluded: npm ci runs before the lint in CI, and
+# some packages there ship Go sources (flatted) that are not Fider's.
+linters:
+  exclusions:
+    paths:
+      - node_modules
+formatters:
+  exclusions:
+    paths:
+      - node_modules

@@ -33,13 +33,18 @@ func rsaJWK(kid string, key *rsa.PublicKey) map[string]any {
 
 func ecJWK(kid string, key *ecdsa.PublicKey) map[string]any {
 	byteLen := (key.Curve.Params().BitSize + 7) / 8
+	// Uncompressed point: 0x04 || X || Y.
+	point, err := key.Bytes()
+	if err != nil {
+		panic(err)
+	}
 	return map[string]any{
 		"kty": "EC",
 		"kid": kid,
 		"use": "sig",
 		"crv": "P-256",
-		"x":   base64.RawURLEncoding.EncodeToString(key.X.FillBytes(make([]byte, byteLen))),
-		"y":   base64.RawURLEncoding.EncodeToString(key.Y.FillBytes(make([]byte, byteLen))),
+		"x":   base64.RawURLEncoding.EncodeToString(point[1 : 1+byteLen]),
+		"y":   base64.RawURLEncoding.EncodeToString(point[1+byteLen:]),
 	}
 }
 

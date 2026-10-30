@@ -22,6 +22,7 @@ export interface SystemSettings {
   oauth: OAuthProviderOption[]
   postWithTags: boolean
   allowAllowedSchemes: boolean
+  guardIdentity: boolean
 }
 
 export interface UserSettings {
@@ -39,7 +40,6 @@ export interface OAuthConfig {
   status: number
   clientID: string
   clientSecret: string
-  clientSecretFromEnv: boolean
   authorizeURL: string
   tokenURL: string
   profileURL: string

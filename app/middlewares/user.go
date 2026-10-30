@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"github.com/getfider/fider/app/pkg/validate"
 
 	"github.com/getfider/fider/app"
+	"github.com/getfider/fider/app/pkg/env"
 	"github.com/getfider/fider/app/pkg/errors"
 	"github.com/getfider/fider/app/pkg/jwt"
 	"github.com/getfider/fider/app/pkg/web"
@@ -31,7 +33,26 @@ func User() web.MiddlewareFunc {
 			)
 
 			cookie, err := c.Request.Cookie(web.CookieAuthName)
-			if err == nil {
+			if env.Config.GuardIdentity.Enabled {
+				// Guard owns sign in and the session: the identity it verified is the only
+				// way in, and a leftover auth cookie from before is dropped, never honoured.
+				if err == nil {
+					c.RemoveCookie(web.CookieAuthName)
+				}
+				var status int
+				user, status, err = guardIdentityUser(c)
+				if err != nil {
+					return err
+				}
+				switch status {
+				case http.StatusUnauthorized:
+					return c.Unauthorized()
+				case http.StatusForbidden:
+					return c.Forbidden()
+				case http.StatusServiceUnavailable:
+					return c.String(http.StatusServiceUnavailable, "identity keys unavailable")
+				}
+			} else if err == nil {
 				token = cookie.Value
 			} else {
 				// The signup-transfer cookie is domain-wide, so it reaches every tenant
@@ -86,7 +107,7 @@ func User() web.MiddlewareFunc {
 					}
 					return c.Redirect("/signin")
 				}
-			} else if c.Request.IsAPI() {
+			} else if user == nil && c.Request.IsAPI() {
 				authHeader := c.Request.GetHeader("Authorization")
 				parts := strings.Split(authHeader, "Bearer")
 				if len(parts) == 2 {

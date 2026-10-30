@@ -29,7 +29,7 @@ export const UserMenu = () => {
             <Dropdown.Divider />
           </>
         )}
-        <Dropdown.ListItem href="/signout" icon={IconLeft}>
+        <Dropdown.ListItem href={fider.settings.guardIdentity ? "/.well-known/bastion/logout" : "/signout"} icon={IconLeft}>
           <Trans id="menu.signout">Sign out</Trans>
         </Dropdown.ListItem>
       </Dropdown>
